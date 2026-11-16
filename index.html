@@ -177,6 +177,23 @@ const KNOW = {
   quit:      {t:"Any time", txt:s=>`Storming out just resets the day. The version of you who leaves for good is at peace (Sanity 85+), has done an honest day's work first (Output 60+), packs the family photo from the desk, says goodbye to Dee, and gets out the front door without ${s.bossShort} seeing the box.`},
 };
 
+const HINTS = [
+  ['memo',    s=>`${s.bossShort} always swings by your desk around 8:45. Be there for it.`],
+  ['boss',    s=>`${s.bossShort} walks the same route every day. Wander the halls and see what happens.`],
+  ['printer', s=>`Try printing your report in the middle of the morning.`],
+  ['consult', s=>`Keep an eye out for a calendar alert around 11:00.`],
+  ['cake',    s=>`Something happens in the break room at noon. Make it to lunchtime.`],
+  ['gerald',  s=>`Be in the break room for the noon cake and look around. Who always misses out?`],
+  ['review',  s=>`Make it all the way to your 5:00 review.`],
+  ['fire',    s=>`Sit through the 2:00 meeting at least once.`],
+  ['visitor', s=>`After lunch, someone waits at the front counter in the lobby.`],
+  ['saturday',s=>`Stick around until 4:30. ${s.bossShort} has one more thing.`],
+  ['dee',     s=>`Dee sits in the second row of cubicles. Talk to her more than once.`],
+  ['bat',     s=>`Gerald in Records might help someone who's been kind to him.`],
+  ['quit',    s=>`The front door is always there. Even if you're not ready.`],
+];
+function nextHint(){ const h=HINTS.find(([k])=>!meta.know[k]); return h?h[1](S):`You've filled the whole journal. Read it closely: every way out is in there.`; }
+
 const ENDINGS = {
   promotion:{name:"Management Material", hint:"Impress the consultants."},
   field:    {name:"The Field", hint:"Some machines need to be dealt with."},
@@ -925,7 +942,9 @@ function doneScreen(){
   } else {
     el.innerHTML=`<h1>${fmt(Math.min(run.t,END))}</h1>
       <div class="card"><span class="stamp">LOOP #${meta.loops} OVER</span><p>${esc(d.text)}</p><p><b>${esc(d.reason)}</b></p>
-      ${learnedThisLoop.length?`<div class="section-title">Learned this loop</div><ul class="journal">${learnedThisLoop.map(k=>`<li><span class="t">${KNOW[k].t}</span><br>${esc(KNOW[k].txt(S))}</li>`).join('')}</ul>`:`<p style="color:var(--muted)">You didn't learn anything new this time.</p>`}
+      ${learnedThisLoop.length?`<div class="section-title">Learned this loop</div><ul class="journal">${learnedThisLoop.map(k=>`<li><span class="t">${KNOW[k].t}</span><br>${esc(KNOW[k].txt(S))}</li>`).join('')}</ul>`:''}
+      <div class="section-title">Next time, try this</div><p>💡 ${esc(nextHint())}</p>
+      <p style="color:var(--muted);font-size:.85rem">Journal ${Object.keys(meta.know).length}/${Object.keys(KNOW).length} · Ways out found ${Object.keys(meta.endings).length}/4</p>
       </div>
       <p class="tag">Final: Output ${run.out} · Standing ${run.std} · Sanity ${run.san}</p>
       <button class="btn primary" id="again">⏰ Wake up<small>${esc(S.wake)}</small></button>
