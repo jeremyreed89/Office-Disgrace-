@@ -13,6 +13,7 @@ Open `index.html` in any browser, phone or desktop. Progress saves in the browse
 - Pick **Public Sector** (City of Bramblewood) or **Private Sector** (Veltrix Solutions).
 - Walk the office top-down with arrows/WASD (or the on-screen D-pad), and press **ACT** (E/Space) next to things.
 - Your boss patrols the halls like a castle guard. Step into his vision cone outside your cubicle and he'll lecture you about cover sheets for 20 minutes, then walk you back to your desk.
+- All audio is synthesized in the browser: office ambience, an original elevator bossa, and an original battle-encounter sting when you get spotted. Mute with the 🔊 button or M.
 - Manage three meters: **Output**, **Standing** and **Sanity**.
 - Scheduled events happen at the same time every loop. A couple of random ones shuffle in each day.
 - Your **Journal** keeps what you learn. **Habits** build up through repetition and make you faster.
@@ -20,4 +21,4 @@ Open `index.html` in any browser, phone or desktop. Progress saves in the browse
 
 ## Status
 
-v0.2 top-down playable mockup for feedback.
+v0.3 top-down playable mockup for feedback.

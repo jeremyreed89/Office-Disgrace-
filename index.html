@@ -86,10 +86,10 @@
       </div>
       <div class="side">
         <button class="actbtn" id="act">ACT</button>
-        <div style="display:flex;gap:6px"><button class="smallbtn" id="jbtn">📓 Journal</button><button class="smallbtn" id="pbtn">⏸</button></div>
+        <div style="display:flex;gap:6px"><button class="smallbtn" id="jbtn">📓 Journal</button><button class="smallbtn" id="mbtn">🔊</button><button class="smallbtn" id="pbtn">⏸</button></div>
       </div>
     </div>
-    <div class="keys">Keyboard: arrows / WASD to move · E or Space to act · J journal · P pause</div>
+    <div class="keys">Keyboard: arrows / WASD to move · E or Space to act · J journal · P pause · M mute</div>
   </div>
 </div>
 <div id="modalRoot"></div>
@@ -248,6 +248,133 @@ function regionName(p){
 }
 
 // ============================================================
+//  AUDIO  (all synthesized; no audio files)
+// ============================================================
+const AudioSys = (()=>{
+  let ac=null, an=null, master, musicG, ambG, sfxG, noiseBuf, brownBuf;
+  let pendingBattle=false, mode='none', step=0, nextT=0, timer=null, cycle=0, ambOn=false, ambNodes=[], ambTimers=[];
+  const mtof=m=>440*Math.pow(2,(m-69)/12);
+  function init(){
+    try{
+      if(!ac){
+        ac=new (window.AudioContext||window.webkitAudioContext)();
+        master=ac.createGain(); master.connect(ac.destination); an=ac.createAnalyser(); an.fftSize=2048; master.connect(an);
+        musicG=ac.createGain(); musicG.gain.value=0.6; musicG.connect(master);
+        ambG=ac.createGain(); ambG.gain.value=0.75; ambG.connect(master);
+        sfxG=ac.createGain(); sfxG.gain.value=0.9; sfxG.connect(master);
+        noiseBuf=ac.createBuffer(1,ac.sampleRate*2,ac.sampleRate); const d=noiseBuf.getChannelData(0); for(let i=0;i<d.length;i++) d[i]=Math.random()*2-1;
+        brownBuf=ac.createBuffer(1,ac.sampleRate*4,ac.sampleRate); const b=brownBuf.getChannelData(0); let l=0; for(let i=0;i<b.length;i++){ l=(l+0.02*(Math.random()*2-1))/1.02; b[i]=l*3.5; }
+        timer=setInterval(sched,40);
+        document.addEventListener('visibilitychange',()=>{ if(!ac) return; document.hidden?ac.suspend():ac.resume(); });
+      }
+      ac.resume(); applyMute();
+    }catch(e){ ac=null; }
+  }
+  function applyMute(){ if(master) master.gain.setTargetAtTime(meta.muted?0:1.5, ac.currentTime, 0.05); }
+  function env(g,t,a,peak,dec){ g.gain.setValueAtTime(0.0001,t); g.gain.exponentialRampToValueAtTime(peak,t+a); g.gain.exponentialRampToValueAtTime(0.0001,t+a+dec); }
+  function osc(type,freq,t,dur,peak,dest,a=0.005,detune=0){
+    const o=ac.createOscillator(), g=ac.createGain(); o.type=type; o.frequency.value=freq; o.detune.value=detune;
+    o.connect(g); g.connect(dest); env(g,t,a,peak,dur); o.start(t); o.stop(t+a+dur+0.05); return o;
+  }
+  function noise(t,dur,peak,dest,ftype,ffreq,q=1,pan=0){
+    const s=ac.createBufferSource(); s.buffer=noiseBuf; s.loop=true;
+    const f=ac.createBiquadFilter(); f.type=ftype; f.frequency.value=ffreq; f.Q.value=q;
+    const g=ac.createGain(); s.connect(f); f.connect(g);
+    let out=g; if(pan && ac.createStereoPanner){ const p=ac.createStereoPanner(); p.pan.value=pan; g.connect(p); out=p; }
+    out.connect(dest); env(g,t,0.002,peak,dur); s.start(t, Math.random()*1.5); s.stop(t+dur+0.05);
+  }
+  // ---- instruments
+  const ep=(m,t,d,v=0.09)=>{ osc('sine',mtof(m),t,d,v,musicG,0.01); osc('sine',mtof(m)*2,t,d*0.5,v*0.18,musicG,0.005); };
+  const vibe=(m,t,d)=>{ const o=osc('sine',mtof(m),t,d+0.6,0.11,musicG,0.004); const l=ac.createOscillator(), lg=ac.createGain(); l.frequency.value=5.5; lg.gain.value=3; l.connect(lg); lg.connect(o.frequency); l.start(t); l.stop(t+d+0.7); osc('sine',mtof(m)*4,t,0.15,0.02,musicG); };
+  const bass=(m,t,d)=>{ const o=ac.createOscillator(), f=ac.createBiquadFilter(), g=ac.createGain(); o.type='triangle'; o.frequency.value=mtof(m); f.type='lowpass'; f.frequency.value=500; o.connect(f); f.connect(g); g.connect(musicG); env(g,t,0.01,0.22,d); o.start(t); o.stop(t+d+0.1); };
+  const shaker=(t,v)=>noise(t,0.05,v,musicG,'highpass',6500);
+  const sq=(m,t,d,v=0.05,dest=musicG)=>{ const o=ac.createOscillator(), f=ac.createBiquadFilter(), g=ac.createGain(); o.type='square'; o.frequency.value=mtof(m); f.type='lowpass'; f.frequency.value=2600; o.connect(f); f.connect(g); g.connect(dest); env(g,t,0.004,v,d); o.start(t); o.stop(t+d+0.05); };
+  const kick=t=>{ const o=ac.createOscillator(), g=ac.createGain(); o.frequency.setValueAtTime(150,t); o.frequency.exponentialRampToValueAtTime(45,t+0.12); o.connect(g); g.connect(musicG); env(g,t,0.002,0.45,0.16); o.start(t); o.stop(t+0.2); };
+  const snare=t=>{ noise(t,0.12,0.18,musicG,'bandpass',1800,0.8); osc('triangle',190,t,0.07,0.08,musicG); };
+
+  // ---- elevator bossa (original). 8 bars, 16 steps each.
+  const PROG=[ {r:36,c:[64,67,71,72]}, {r:33,c:[60,64,67,69]}, {r:38,c:[62,65,69,72]}, {r:31,c:[59,62,65,67]},
+               {r:40,c:[62,64,67,71]}, {r:33,c:[61,64,67,69]}, {r:38,c:[60,65,69,72]}, {r:31,c:[59,62,65,69]} ];
+  const MEL=[ [[0,76,6],[6,74,2],[8,72,4],[12,71,4]], [[0,72,6],[6,69,2],[8,67,8]], [[0,69,4],[4,72,4],[8,77,6],[14,76,2]], [[0,74,8],[8,71,4],[12,67,4]],
+              [[0,71,6],[6,74,2],[8,79,4],[12,78,4]], [[0,76,6],[6,73,2],[8,69,8]], [[0,72,4],[4,74,4],[8,77,4],[12,76,4]], [[0,74,12]] ];
+  function elevatorStep(s,t,spb16){
+    const bar=Math.floor(s/16)%8, st=s%16, ch=PROG[bar];
+    if(st===0 && bar===0 && s>0) cycle++;
+    if([0,6,10,13].includes(st)) ch.c.forEach(m=>ep(m,t,st===0?spb16*5:spb16*2.2,0.05));
+    if(st===0) bass(ch.r,t,spb16*5); if(st===6||st===8) bass(ch.r+7,t,spb16*1.8); if(st===14) bass(ch.r,t,spb16*1.8);
+    shaker(t,[0.035,0.012,0.02,0.012][st%4]);
+    if(cycle%2===0) for(const [ss,m,d] of MEL[bar]) if(ss===st) vibe(m,t,spb16*d);
+  }
+  // ---- battle loop (original): chromatic tension in E minor
+  const BROOT=[40,41,40,43];
+  function battleStep(s,t,spb16){
+    const bar=Math.floor(s/16)%4, st=s%16, r=BROOT[bar];
+    sq(r+([2,5,7,10,13].includes(st)?12:0),t,spb16*0.8,0.06);
+    if(st%2===0){ const arp=[24,27,31,36,31,27,24,27]; sq(r+arp[st/2],t,spb16*1.6,0.035); }
+    if(st===0||st===8||(st===10&&bar===3)) kick(t);
+    if(st===4||st===12) snare(t);
+    noise(t,0.03,st%2?0.02:0.04,musicG,'highpass',8000);
+    if(bar===3 && st>=12) sq(r+36+(st-12),t,spb16*0.9,0.03);
+  }
+  function sched(){
+    if(!ac || mode==='none') return;
+    const bpm = mode==='battle'?168:96, spb16=60/bpm/4;
+    if(nextT<ac.currentTime) nextT=ac.currentTime+0.05;
+    while(nextT < ac.currentTime+0.18){
+      (mode==='battle'?battleStep:elevatorStep)(step,nextT,spb16);
+      nextT+=spb16 * (mode==='elevator' && step%2 ? 0.92 : (mode==='elevator'?1.08:1)); // light swing
+      step++;
+    }
+  }
+  function setMode(m, delay=0.05){ if(!ac) return; pendingBattle=false; if(m===mode) return; mode=m; step=0; cycle=0; nextT=ac.currentTime+delay; }
+
+  // ---- ambience
+  function ambience(on){
+    if(!ac || on===ambOn) return; ambOn=on;
+    if(!on){ ambNodes.forEach(n=>{try{n.stop()}catch(e){}}); ambNodes=[]; ambTimers.forEach(clearTimeout); ambTimers=[]; return; }
+    // HVAC rumble
+    const s=ac.createBufferSource(); s.buffer=brownBuf; s.loop=true; const f=ac.createBiquadFilter(); f.type='lowpass'; f.frequency.value=380; const g=ac.createGain(); g.gain.value=0.28;
+    s.connect(f); f.connect(g); g.connect(ambG); s.start(); ambNodes.push(s);
+    // fluorescent hum
+    for(const [fr,v] of [[120,0.012],[240,0.005]]){ const o=ac.createOscillator(), og=ac.createGain(); o.frequency.value=fr; og.gain.value=v; o.connect(og); og.connect(ambG); o.start(); ambNodes.push(o); }
+    const later=(fn,min,max)=>{ const id=setTimeout(()=>{ if(!ambOn) return; fn(); later(fn,min,max); }, (min+Math.random()*(max-min))*1000); ambTimers.push(id); };
+    // keyboard clatter from nearby cubicles
+    later(()=>{ const pan=Math.random()*1.6-0.8, n=6+Math.floor(Math.random()*16); let t=ac.currentTime+0.05;
+      for(let i=0;i<n;i++){ noise(t,0.018,0.05+Math.random()*0.04,ambG,'bandpass',2200+Math.random()*1800,2.5,pan); t+=0.07+Math.random()*0.12; if(Math.random()<0.08) t+=0.4; } }, 1.5, 5);
+    // mouse clicks
+    later(()=>{ const t=ac.currentTime+0.02; noise(t,0.01,0.05,ambG,'bandpass',3500,4,Math.random()-0.5); noise(t+0.12,0.01,0.04,ambG,'bandpass',3300,4); }, 3, 9);
+    // distant desk phone
+    later(()=>{ let t=ac.currentTime+0.05; for(let r=0;r<2;r++){ for(let k=0;k<12;k++){ osc('sine',440,t+k*0.05,0.04,0.012,ambG); osc('sine',480,t+k*0.05,0.04,0.012,ambG); } t+=1.4; } }, 22, 55);
+    // copier churning
+    later(()=>{ const t=ac.currentTime+0.05; for(let k=0;k<10;k++) noise(t+k*0.32,0.22,0.035,ambG,'bandpass',700,1.2,0.6); }, 28, 70);
+    // throat clear / chair squeak
+    later(()=>{ const t=ac.currentTime; const o=ac.createOscillator(), og=ac.createGain(); o.type='sawtooth'; o.frequency.setValueAtTime(900,t); o.frequency.linearRampToValueAtTime(1300,t+0.18); const lp=ac.createBiquadFilter(); lp.type='bandpass'; lp.frequency.value=1100; o.connect(lp); lp.connect(og); og.connect(ambG); env(og,t,0.03,0.012,0.18); o.start(t); o.stop(t+0.3); }, 15, 40);
+  }
+
+  // ---- sfx
+  function sfx(k){
+    if(!ac) return; const t=ac.currentTime+0.01;
+    if(k==='blip'){ osc('sine',880,t,0.06,0.08,sfxG); osc('sine',1320,t+0.05,0.07,0.06,sfxG); }
+    if(k==='ding'){ osc('sine',1046,t,0.6,0.08,sfxG); osc('sine',1318,t+0.12,0.7,0.06,sfxG); }
+    if(k==='learn'){ [72,76,79,84].forEach((m,i)=>osc('triangle',mtof(m),t+i*0.07,0.25,0.06,sfxG)); }
+    if(k==='fanfare'){ [[60,0],[64,.12],[67,.24],[72,.36],[67,.6],[72,.72]].forEach(([m,d])=>{ sq(m,t+d,0.2,0.06,sfxG); sq(m-12,t+d,0.2,0.04,sfxG); }); [60,64,67,72].forEach(m=>osc('triangle',mtof(m),t+0.9,1.2,0.05,sfxG)); }
+    if(k==='wahwah'){ [[62,0,.35],[61,.42,.35],[60,.84,.35],[59,1.26,1.1]].forEach(([m,d,l])=>{ const o=ac.createOscillator(), f=ac.createBiquadFilter(), g=ac.createGain(); o.type='sawtooth'; o.frequency.value=mtof(m-12); f.type='lowpass'; f.frequency.setValueAtTime(400,t+d); f.frequency.linearRampToValueAtTime(1200,t+d+l*0.5); f.frequency.linearRampToValueAtTime(350,t+d+l); o.connect(f); f.connect(g); g.connect(sfxG); env(g,t+d,0.04,0.12,l); o.start(t+d); o.stop(t+d+l+0.1); }); }
+  }
+  // the "you've been spotted" encounter sting, then battle music
+  function spotted(){
+    if(!ac) return; const t=ac.currentTime+0.01;
+    osc('square',1760,t,0.05,0.07,sfxG); osc('square',2093,t+0.06,0.09,0.07,sfxG);
+    [[64,67,71],[65,68,72],[66,69,73],[67,70,74]].forEach((ch,i)=>ch.forEach(m=>sq(m,t+0.16+i*0.085,0.08,0.05,sfxG)));
+    const tt=t+0.52;
+    [52,58,64,70].forEach(m=>{ const o=ac.createOscillator(), f=ac.createBiquadFilter(), g=ac.createGain(); o.type='sawtooth'; o.frequency.value=mtof(m); f.type='lowpass'; f.frequency.setValueAtTime(3000,tt); f.frequency.exponentialRampToValueAtTime(300,tt+0.7); o.connect(f); f.connect(g); g.connect(sfxG); env(g,tt,0.01,0.05,0.7); o.start(tt); o.stop(tt+0.8); });
+    noise(tt,0.5,0.08,sfxG,'bandpass',1200,0.7);
+    setMode('none'); pendingBattle=true; setTimeout(()=>{ if(pendingBattle) setMode('battle',0.02); },900);
+  }
+  function peak(){ if(!an) return -1; const d=new Float32Array(an.fftSize); an.getFloatTimeDomainData(d); let m=0; for(const v of d) m=Math.max(m,Math.abs(v)); return m; }
+  return {init, setMode, ambience, sfx, spotted, applyMute, peak, get mode(){return mode;}, get on(){return !!ac;}};
+})();
+
+// ============================================================
 //  STATE
 // ============================================================
 let S, run=null, modal=null, menuOpen=false, paused=false, journalOpen=false, learnedThisLoop=[];
@@ -256,7 +383,7 @@ const boss = {x:4.5,y:3.5,ang:Math.PI/2,baseAng:Math.PI/2,wp:0,wait:0,alert:0,ch
 const BOSS_PATH = [[4.5,3.5,3],[4.5,7.5,0],[24.5,7.5,1.5],[25.5,11.5,0],[1.5,11.5,1.5],[1.5,17.5,0],[25.5,17.5,1.5],[25.5,7.5,0],[4.5,7.5,0]];
 const VIEW_R=5.2, VIEW_HALF=0.62;
 
-function learn(k){ if(!meta.know[k]){ meta.know[k]=true; learnedThisLoop.push(k); save(); toast(`📓 Journal: ${KNOW[k].txt(S).slice(0,80)}...`); } }
+function learn(k){ if(!meta.know[k]){ meta.know[k]=true; learnedThisLoop.push(k); save(); AudioSys.sfx('learn'); toast(`📓 Journal: ${KNOW[k].txt(S).slice(0,80)}...`); } }
 function say(t){ document.getElementById('msg').textContent=t; }
 function adj(o){ if(o.out) run.out=clamp(run.out+o.out); if(o.std) run.std=clamp(run.std+o.std); if(o.san) run.san=clamp(run.san+o.san); }
 function delta(o){ const p=[]; if(o.out) p.push(`Output ${o.out>0?'+':''}${o.out}`); if(o.std) p.push(`Standing ${o.std>0?'+':''}${o.std}`); if(o.san) p.push(`Sanity ${o.san>0?'+':''}${o.san}`); return p.length?` [${p.join(', ')}]`:''; }
@@ -274,9 +401,10 @@ function newRun(){
   Object.assign(player,{x:11.5,y:10.4,carry:null});
   Object.assign(boss,{x:4.5,y:3.5,ang:Math.PI/2,baseAng:Math.PI/2,wp:0,wait:3,alert:0,chase:false,look:0});
   modal=null; menuOpen=false; paused=false; journalOpen=false;
-  show('game'); sizeCanvas();
+  show('game'); sizeCanvas(); AudioSys.init(); AudioSys.ambience(true); AudioSys.setMode('elevator');
   say(`${S.wake} You're a ${S.title} at ${S.org}. Your ${S.review} is at 5:00 PM.`);
   toast(meta.loops>1?`Loop #${meta.loops}. You've lived this exact Monday before.`:`Walk with the arrows. Stand next to things and press ACT. Stay out of the yellow cone.`);
+  document.getElementById('mbtn').textContent=meta.muted?'🔇':'🔊';
   renderHud();
 }
 
@@ -348,7 +476,7 @@ function nearest(){
   return best;
 }
 function openMenu(o){
-  const A=o.acts(); menuOpen=true;
+  const A=o.acts(); menuOpen=true; AudioSys.sfx('blip');
   showModal(`<span class="stamp">${fmt(run.t)} · ${esc(regionName(player))}</span><h2>${esc(o.name)}</h2>
     ${A.map((a,i)=>`<button class="btn ${a.special?'special':''} ${a.danger?'danger':''}" data-i="${i}">${esc(a.label)}<small>${a.mins?a.mins+' min':''}${a.special?(a.mins?' · ':'')+'★ you know something':''}</small></button>`).join('')}
     <button class="btn" data-i="x" style="text-align:center">Never mind</button>`, 'memo', i=>{
@@ -434,7 +562,7 @@ function randomEvent(k){
 
 function spottedEvent(){
   const f=run.f; learn('boss');
-  const back=()=>{ Object.assign(player,{x:11.5,y:10.4}); f.graceUntil=run.t+8; };
+  const back=()=>{ Object.assign(player,{x:11.5,y:10.4}); f.graceUntil=run.t+8; AudioSys.setMode('elevator'); };
   if(player.carry==='printer'){
     player.carry=null;
     return {title:`"Whoa, whoa, whoa."`, text:`${S.bossShort} steps in front of you. "Where are we going with ${S.printer}? That's a leased machine, mmkay?" He makes you carry it back, then explains the lease terms for half an hour.`, choices:[{label:'Put it back', fx(){ run.t+=30; back(); apply(`It's back in the copy room. Its little orange light blinks at you, victorious.`,{std:-15,san:-10}); }}]};
@@ -467,10 +595,10 @@ function afterChange(){
 function checkTriggers(){
   const r=run, f=r.f;
   for(const e of scheduled()){
-    if(!r.fired[e.id] && r.t>=e.time){ r.fired[e.id]=true; const m=e.ev(); if(m){ modal=m; presentModal(); return true; } }
+    if(!r.fired[e.id] && r.t>=e.time){ r.fired[e.id]=true; const m=e.ev(); if(m){ modal=m; AudioSys.sfx('ding'); presentModal(); return true; } }
   }
-  if(!f.consultDone && r.t>=11*60 && r.t<11*60+20 && inR(player,...REG.conf)){ modal=consultEvent(); presentModal(); return true; }
-  if(!f.cakeDone && r.t>=12*60 && r.t<12*60+30 && inR(player,...REG.brk)){ modal=cakeEvent(); presentModal(); return true; }
+  if(!f.consultDone && r.t>=11*60 && r.t<11*60+20 && inR(player,...REG.conf)){ modal=consultEvent(); AudioSys.sfx('ding'); presentModal(); return true; }
+  if(!f.cakeDone && r.t>=12*60 && r.t<12*60+30 && inR(player,...REG.brk)){ modal=cakeEvent(); AudioSys.sfx('ding'); presentModal(); return true; }
   if(r.t>=END){ review(); return true; }
   return false;
 }
@@ -484,7 +612,7 @@ function review(){
   if(r.out>=100 && r.std>=40) return endLoop(`Your ${S.review} goes fine. "Meets expectations." ${S.bossShort} gives you a thumbs-up without looking up from his phone. You drive home, eat dinner, and go to bed early.`, `You passed. It didn't matter.`);
   endLoop(`Your ${S.review} lasts four minutes. ${S.bossShort} reads "needs improvement" directly off the form, twice.`, r.out<100?`Output was ${r.out}/100.`:`Standing was ${r.std}/40.`);
 }
-function endLoop(text, reason){ run.done={type:'loop',text,reason}; save(); doneScreen(); }
+function endLoop(text, reason){ run.done={type:'loop',text,reason}; save(); AudioSys.setMode('none'); AudioSys.ambience(false); AudioSys.sfx('wahwah'); doneScreen(); }
 function ending(k){
   const fresh=!meta.endings[k]; meta.endings[k]=meta.loops; save();
   const txt={
@@ -493,7 +621,7 @@ function ending(k){
     goodday:`You didn't game the day this time. You spent it on other people: a slice of cake for Gerald, an afternoon for ${S.visitor}, and the work done well because it was worth doing well. ${S.bossShort} says "meets expectations." It does. When you wake up the next morning, the radio says it's Tuesday.`,
     decks:S.decks+` When you wake up the next morning, the radio says it's Tuesday.`,
   }[k];
-  run.done={type:'ending',k,text:txt,fresh}; doneScreen();
+  run.done={type:'ending',k,text:txt,fresh}; AudioSys.setMode('none'); AudioSys.ambience(false); AudioSys.sfx('fanfare'); doneScreen();
 }
 
 // ============================================================
@@ -571,7 +699,7 @@ function updateBoss(dt){
     const sp=2.3*dt; boss.x+=dx/d*Math.min(sp,d); boss.y+=dy/d*Math.min(sp,d);
   }
   if(playerExposed() && bossSees(player.x,player.y)){
-    boss.chase=true; boss.alert=0.7; toast(`❗ ${S.bossShort} spotted you!`, true);
+    boss.chase=true; boss.alert=0.7; AudioSys.spotted(); toast(`❗ ${S.bossShort} spotted you!`, true);
   }
 }
 
@@ -656,6 +784,12 @@ function draw(now){
   if(player.carry==='printer') emoji('🖨️',player.x,player.y-0.65,.75);
   ctx.restore();
   if(Math.random()<0.004){ ctx.fillStyle='rgba(255,255,230,.08)'; ctx.fillRect(0,0,VW,VH); }
+  if(boss.chase && boss.alert>0){ // battle-encounter wipe
+    const p=1-boss.alert/0.7, n=10, bh=VH/n;
+    if(p<0.25 && Math.floor(p*40)%2===0){ ctx.fillStyle='rgba(255,255,255,.55)'; ctx.fillRect(0,0,VW,VH); }
+    ctx.fillStyle='rgba(10,10,10,.9)';
+    for(let i=0;i<n;i++){ const w=VW*Math.min(1,Math.max(0,(p-0.2)*1.6)); if(i%2) ctx.fillRect(0,i*bh,w,bh+1); else ctx.fillRect(VW-w,i*bh,w,bh+1); }
+  }
 }
 function person(x,y,body,skin,isBoss,isPlayer){
   const T=TS;
@@ -695,6 +829,7 @@ window.addEventListener('keydown',e=>{
   if((e.code==='KeyE'||e.code==='Space'||e.code==='Enter') && !isPaused()){ e.preventDefault(); tryAct(); }
   if(e.code==='KeyJ') toggleJournal();
   if(e.code==='KeyP') togglePause();
+  if(e.code==='KeyM') toggleMute();
 });
 window.addEventListener('keyup',e=>{ if(KEYMAP[e.code]) keys[KEYMAP[e.code]]=false; });
 window.addEventListener('blur',()=>{ for(const k in keys) keys[k]=false; });
@@ -708,6 +843,8 @@ document.querySelectorAll('.dpad button').forEach(b=>{
 document.getElementById('act').addEventListener('click',()=>{ if(!isPaused()) tryAct(); });
 document.getElementById('jbtn').addEventListener('click',toggleJournal);
 document.getElementById('pbtn').addEventListener('click',togglePause);
+document.getElementById('mbtn').addEventListener('click',toggleMute);
+function toggleMute(){ meta.muted=!meta.muted; save(); AudioSys.init(); AudioSys.applyMute(); document.getElementById('mbtn').textContent=meta.muted?'🔇':'🔊'; }
 function tryAct(){ const o=nearest(); if(o) openMenu(o); else toast(`Nothing to do here. Walk up to something.`); }
 
 // ============================================================
@@ -742,7 +879,7 @@ function togglePause(){
     <p style="color:var(--muted);font-size:.9rem">Tip: the yellow cone is what ${S.bossShort} can see. Walls block it. Cubicle partitions don't. You're safe inside your own cubicle.</p>
     <button class="btn primary" data-i="r">Resume</button>
     <button class="btn" data-i="t" style="text-align:center">Quit to title (this loop is lost)</button>`,'memo',i=>{
-      closeModal(); paused=false; if(i==='t'){ run=null; titleScreen(); } });
+      closeModal(); paused=false; if(i==='t'){ run=null; AudioSys.setMode('none'); AudioSys.ambience(false); titleScreen(); } });
 }
 
 let wipeArmed=false;
@@ -768,7 +905,7 @@ function titleScreen(){
       <div style="margin-top:8px">Ways out (${got}/4):<br>${Object.entries(ENDINGS).map(([k,e])=>`<span class="pill ${meta.endings[k]?'got':''}">${meta.endings[k]?e.name:'??? · '+e.hint}</span>`).join('')}</div>
       <button class="btn danger" id="wipe" style="margin-top:12px;text-align:center">Erase all progress</button>
     </div>`:''}
-    <div class="foot">v0.2 · top-down mockup · progress saves in this browser</div>`;
+    <div class="foot">v0.3 · top-down mockup with sound · progress saves in this browser</div>`;
   document.querySelectorAll('[data-s]').forEach(b=>b.onclick=()=>{ meta.sector=b.dataset.s; save(); newRun(); });
   const w=document.getElementById('wipe');
   if(w) w.onclick=()=>{ if(!wipeArmed){ wipeArmed=true; w.textContent='Tap again to confirm'; return; } meta=freshMeta(); save(); wipeArmed=false; titleScreen(); };
@@ -800,7 +937,7 @@ function doneScreen(){
 }
 
 // hooks for automated playtesting
-window.__od={get run(){return run}, player, boss, meta:()=>meta, objects, openMenu, nearest, bossSees, playerExposed};
+window.__od={audio:AudioSys, get run(){return run}, player, boss, meta:()=>meta, objects, openMenu, nearest, bossSees, playerExposed};
 titleScreen();
 </script>
 </body>
