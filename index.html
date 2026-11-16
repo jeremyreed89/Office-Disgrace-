@@ -1,0 +1,492 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<title>Office Disgrace: It's Monday. Again.</title>
+<style>
+  :root{
+    --bg:#d9d4c3; --panel:#efe9d6; --ink:#2b2a26; --muted:#6d685c; --line:#b7b09a;
+    --accent:#2f5d50; --warn:#a4452c; --gold:#b98a2a; --screen:#1f2a22; --glow:#9fe0a8;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;background:var(--bg);color:var(--ink);font-family:Georgia,'Times New Roman',serif}
+  body{background-image:repeating-linear-gradient(0deg,rgba(0,0,0,.025) 0 2px,transparent 2px 6px)}
+  .wrap{max-width:560px;margin:0 auto;padding:14px 14px 40px}
+  h1{font-family:'Courier New',monospace;letter-spacing:.06em;margin:.2em 0 0;font-size:2rem;text-transform:uppercase}
+  .tag{font-style:italic;color:var(--muted);margin:.2em 0 1em}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:14px;margin:10px 0;box-shadow:0 2px 0 rgba(0,0,0,.06)}
+  .btn{display:block;width:100%;text-align:left;font:inherit;font-size:1rem;background:#fffdf4;border:1px solid var(--line);border-radius:6px;padding:12px 14px;margin:8px 0;cursor:pointer;color:var(--ink)}
+  .btn:hover{border-color:var(--accent)}
+  .btn:active{transform:translateY(1px)}
+  .btn small{display:block;color:var(--muted);font-size:.8rem;margin-top:3px;font-family:'Courier New',monospace}
+  .btn.primary{background:var(--accent);color:#fff;border-color:var(--accent);text-align:center}
+  .btn.primary small{color:#d6eadf}
+  .btn.danger{border-color:var(--warn)}
+  .btn.special{border:2px solid var(--gold);background:#fff8e2}
+  .btn:disabled{opacity:.45;cursor:not-allowed}
+  .hud{position:sticky;top:0;z-index:5;background:var(--screen);color:var(--glow);border-radius:6px;padding:10px 12px;font-family:'Courier New',monospace;box-shadow:0 3px 8px rgba(0,0,0,.25)}
+  .hud .row{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+  .clock{font-size:1.6rem;font-weight:bold;letter-spacing:.05em}
+  .loopno{font-size:.8rem;opacity:.8;text-align:right}
+  .meters{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:8px}
+  .meter label{font-size:.68rem;text-transform:uppercase;letter-spacing:.08em;opacity:.85;display:flex;justify-content:space-between}
+  .bar{height:8px;background:#0e1510;border-radius:4px;overflow:hidden;margin-top:3px}
+  .bar i{display:block;height:100%;background:var(--glow);transition:width .4s}
+  .bar.low i{background:#e98a6a}
+  .goal{font-size:.72rem;opacity:.75;margin-top:6px}
+  .log p{margin:.45em 0;line-height:1.45}
+  .log p.new{animation:fade .5s}
+  .log .sys{font-family:'Courier New',monospace;font-size:.85rem;color:var(--accent)}
+  .log .bad{color:var(--warn)}
+  .log .learn{font-family:'Courier New',monospace;font-size:.85rem;color:var(--gold)}
+  @keyframes fade{from{opacity:0;transform:translateY(4px)}to{opacity:1}}
+  .section-title{font-family:'Courier New',monospace;text-transform:uppercase;font-size:.75rem;letter-spacing:.12em;color:var(--muted);margin:16px 0 4px}
+  .modal{position:fixed;inset:0;background:rgba(20,20,15,.55);display:flex;align-items:flex-end;justify-content:center;z-index:20;padding:10px}
+  .modal .card{max-width:560px;width:100%;max-height:88vh;overflow:auto;margin:0;border-top:5px solid var(--warn)}
+  .modal .card.memo{border-top-color:var(--accent)}
+  .modal h2{margin:.1em 0 .4em;font-size:1.2rem}
+  .stamp{display:inline-block;font-family:'Courier New',monospace;font-size:.72rem;border:1px solid var(--muted);padding:1px 6px;border-radius:3px;color:var(--muted);margin-bottom:6px}
+  .journal li{margin:.5em 0;line-height:1.4}
+  .journal .t{font-family:'Courier New',monospace;color:var(--accent);font-size:.85rem}
+  .pill{display:inline-block;font-family:'Courier New',monospace;font-size:.75rem;padding:2px 8px;border-radius:10px;background:#e5dfc9;margin:2px 4px 2px 0}
+  .pill.got{background:var(--gold);color:#fff}
+  .foot{font-size:.75rem;color:var(--muted);text-align:center;margin-top:24px;font-family:'Courier New',monospace}
+  .sector{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .sector .btn{text-align:center;padding:16px 10px}
+  .sector .btn b{display:block;font-size:1.1rem}
+  a{color:var(--accent)}
+</style>
+</head>
+<body>
+<div class="wrap" id="app"></div>
+
+<script>
+/* ============================================================
+   OFFICE DISGRACE  v0.1 mockup
+   A roguelite work simulator. Same Monday, every Monday.
+   ============================================================ */
+
+// ---------- Sector flavor ----------
+const SECTORS = {
+  public: {
+    label:"Public Sector",
+    blurb:"City of Bramblewood. Pension, fluorescent lights, and forms about forms.",
+    org:"City of Bramblewood", dept:"Department of Permits & Code Review", title:"Plans Examiner II",
+    boss:"Deputy Director Lyle Pruitt", bossShort:"Pruitt",
+    work:"Review permit applications", workDone:"You review a stack of permit applications. Half are missing a signature on page 4.",
+    workN:"permit reviews",
+    report:"Quarterly Performance Measures report",
+    memo:"the revised Form 7-B routing slip",
+    memoText:"Pruitt leans over your cubicle wall with a coffee mug that says WORLD'S OKAYEST SUPERVISOR. \"Hey there. So, all permit reviews now go out with the revised Form 7-B routing slip. Did you not see the memo? I'll make sure you get another copy.\"",
+    consultants:"two efficiency consultants hired by the City Manager's office",
+    coworker:"Dee from Zoning",
+    visitor:"Mrs. Okafor",
+    visitorIntro:"Mrs. Okafor is at the front counter. Her fence permit has been stuck for three months, and she took a half day off work to sort it out. Everyone else has already sent her to another floor.",
+    visitorFix:"the original 1987 plat survey",
+    visitorWin:"With the 1987 survey in hand, the problem takes eleven minutes to fix. Mrs. Okafor shakes your hand with both of hers. \"Nobody in this building has ever actually helped me.\"",
+    review:"annual performance evaluation",
+    meeting:"mandatory all-staff budget briefing",
+    printer:"the shared copier on the third floor",
+    cakeFor:"someone in Fleet Services you have never met",
+    extinguisher:"You sign up as floor fire warden. It comes with a vest.",
+    satText:"Pruitt appears, mug first. \"So. Council wants the measures report re-run before Monday. We'll be needing you in this Saturday. Mmkay? Super.\"",
+    wake:"6:47 AM. The clock radio clicks on. Same traffic report. Same pothole on Elm Street.",
+    decks:"You leave your badge on the keyboard and walk out into the sunlight. By Friday, you're working on a landscaping crew that maintains the city's medians. You've never been happier. You don't even mind the heat.",
+  },
+  private: {
+    label:"Private Sector",
+    blurb:"Veltrix Solutions. Synergy, stock options that will never vest, and reports nobody reads.",
+    org:"Veltrix Solutions", dept:"Integrated Reporting Group", title:"Reporting Analyst II",
+    boss:"Regional VP Doug Fennimore", bossShort:"Fennimore",
+    work:"Grind through QRS reports", workDone:"You grind through QRS reports. Each one is the same as the last one, but with a different date.",
+    workN:"QRS reports",
+    report:"Quarterly Synergy Report",
+    memo:"the new QRS cover sheet",
+    memoText:"Fennimore drifts up to your cubicle holding a coffee mug that says SYNERGY. \"Hey there. So, all QRS reports go out with the new cover sheet now. Did you not get the memo? I'll make sure you get another copy.\"",
+    consultants:"two consultants from Thorne & Pike, brought in to \"right-size\" the department",
+    coworker:"Dee from Accounts Payable",
+    visitor:"Priya the intern",
+    visitorIntro:"Priya, the new intern, is quietly panicking at the next desk. The client deck is due at 3:00 and the source data has vanished from the shared drive.",
+    visitorFix:"the archived 2019 client file",
+    visitorWin:"With the 2019 file in hand, the deck comes together in twenty minutes. Priya looks at you like you just pulled her out of a river. \"Nobody here has ever actually helped me.\"",
+    review:"quarterly performance review",
+    meeting:"mandatory all-hands on the Five Synergy Pillars",
+    printer:"the cursed printer on the second floor",
+    cakeFor:"someone in Marketing you have never met",
+    extinguisher:"You sign up as floor safety captain. It comes with a lanyard.",
+    satText:"Fennimore appears, mug first. \"So. The client moved up the Synergy deadline. We'll be needing you in this Saturday. Mmkay? Super.\"",
+    wake:"6:47 AM. The alarm goes off. The same morning DJ makes the same joke about Mondays.",
+    decks:"You leave your badge on the keyboard and walk out into the sunlight. By Friday, you're working for a guy named Lou who builds backyard decks. You've never been happier. You don't even miss the stock options.",
+  }
+};
+
+// ---------- Knowledge (persists across loops) ----------
+const KNOW = {
+  memo:      {t:"8:45", txt:s=>`${s.bossShort} comes by about ${s.memo}. Attach it before he gets there.`},
+  printer:   {t:"10:00-11:00", txt:s=>`${cap(s.printer)} jams if you print between 10 and 11. Every time.`},
+  consult:   {t:"11:00", txt:s=>`The consultants interview you. They seem to respect people who have stopped pretending.`},
+  cake:      {t:"12:00", txt:s=>`Birthday cake in the break room for ${s.cakeFor}.`},
+  gerald:    {t:"12:00", txt:s=>`Gerald from Records sits in the corner at every cake. Nobody has ever saved him a slice.`},
+  geraldRec: {t:"Any time", txt:s=>`Gerald knows where everything in the archive is. He just needs a reason to care.`},
+  visitor:   {t:"1:30", txt:s=>`${s.visitor} needs ${s.visitorFix}. It's somewhere in Records.`},
+  fire:      {t:"2:15", txt:s=>`Someone burns popcorn during the ${s.meeting}. The fire alarm goes off. Volunteer as fire warden before 2:00 and you skip the whole thing.`},
+  saturday:  {t:"4:30", txt:s=>`${s.bossShort} asks you to come in Saturday. If you know it's coming, you can be "already gone."`},
+  review:    {t:"5:00", txt:s=>`Passing the review takes Output 100 and Standing 40. Passing alone doesn't end the loop. Something else has to change.`},
+  dee:       {t:"Any time", txt:s=>`${s.coworker} has fantasies about what she'd do to ${s.printer}. She'd help, if you asked enough.`},
+  quit:      {t:"Any time", txt:s=>`Walking out angry just resets the day. Walking out calm might be different.`},
+};
+
+const ENDINGS = {
+  promotion:{name:"Management Material", hint:"Impress the consultants."},
+  field:    {name:"The Field", hint:"Some machines need to be dealt with."},
+  goodday:  {name:"The Good Monday", hint:"Spend the day on other people."},
+  decks:    {name:"Walked Out Into the Sun", hint:"Leave, but on your own terms."},
+};
+
+const HABITS = {
+  work:  {need:6, name:"Muscle Memory", desc:"Work takes 45 minutes instead of 60."},
+  coffee:{need:5, name:"Bean Whisperer", desc:"Coffee restores more Sanity."},
+  chat:  {need:5, name:"Hallway Diplomat", desc:"Chatting earns more Standing."},
+  zone:  {need:4, name:"Thousand-Yard Stare", desc:"Zoning out restores more Sanity."},
+};
+
+const START=8*60, END=17*60;
+const cap = s => s.charAt(0).toUpperCase()+s.slice(1);
+const fmt = m => { let h=Math.floor(m/60), mm=m%60, ap=h>=12?'PM':'AM'; h=h%12||12; return `${h}:${String(mm).padStart(2,'0')} ${ap}`; };
+const clamp = v => Math.max(0,Math.min(100,v));
+
+// ---------- Persistence ----------
+const SAVE_KEY='officeDisgrace_v1';
+let meta = load() || freshMeta();
+function freshMeta(){ return {loops:0, know:{}, habits:{work:0,coffee:0,chat:0,zone:0}, endings:{}, sector:null, best:0}; }
+function load(){ try{ return JSON.parse(localStorage.getItem(SAVE_KEY)); }catch(e){ return null; } }
+function save(){ try{ localStorage.setItem(SAVE_KEY, JSON.stringify(meta)); }catch(e){} }
+function hasHabit(k){ return meta.habits[k] >= HABITS[k].need; }
+
+let S; // sector text
+let run = null;
+let learnedThisLoop = [];
+let modal = null;
+
+function learn(k){
+  if(!meta.know[k]){ meta.know[k]=true; learnedThisLoop.push(k); save();
+    say(`NOTED IN JOURNAL: ${KNOW[k].txt(S)}`,'learn'); }
+}
+function say(txt,cls=''){ run.log.push({txt,cls}); if(run.log.length>40) run.log.shift(); }
+function adj(o){ if(o.out) run.out=clamp(run.out+o.out); if(o.std) run.std=clamp(run.std+o.std); if(o.san) run.san=clamp(run.san+o.san); }
+function delta(o){
+  const p=[]; if(o.out) p.push(`Output ${o.out>0?'+':''}${o.out}`); if(o.std) p.push(`Standing ${o.std>0?'+':''}${o.std}`); if(o.san) p.push(`Sanity ${o.san>0?'+':''}${o.san}`);
+  return p.length?` [${p.join(', ')}]`:'';
+}
+function apply(txt,o,cls=''){ adj(o); say(txt+delta(o),cls); }
+
+// ---------- Run setup ----------
+const RANDOM_POOL = ['outage','survey','fax','donuts','dee','parking'];
+function newRun(){
+  S = SECTORS[meta.sector];
+  meta.loops++; save();
+  learnedThisLoop=[];
+  const pool=[...RANDOM_POOL].sort(()=>Math.random()-.5).slice(0,2);
+  const slots=[9*60+30, 15*60+15].sort(()=>Math.random()-.5);
+  run = {t:START, out:0, std:50, san:70, log:[], fired:{}, f:{zoned:0, vent:0}, randoms:pool.map((k,i)=>({k, time:slots[i]}))};
+  say(S.wake,'sys');
+  say(`You are a ${S.title} in the ${S.dept}, ${S.org}. Your ${S.review} is at 5:00 PM. You need Output 100 and Standing 40 to pass.`);
+  if(meta.loops>1) say(`Wait. You've lived this exact day before. This is loop #${meta.loops}.`,'sys');
+  render();
+}
+
+// ---------- Actions ----------
+function actions(){
+  const r=run, f=r.f, t=r.t, K=meta.know, A=[];
+  const lunchWindow = t>=11*60+30 && t<13*60+30 && !f.lunched;
+
+  if(K.memo && !f.cover && t<8*60+45)
+    A.push({id:'cover', label:`Attach ${S.memo} to everything`, mins:10, special:true, do(){ f.cover=true; apply(`You staple ${S.memo} to every outgoing file. It feels petty and wonderful.`,{}); }});
+
+  A.push({id:'work', label:S.work, mins:hasHabit('work')?45:60, do(){
+    meta.habits.work++; const o = r.san<25 ? {out:6,san:-6} : {out:12,san:-6};
+    apply(r.san<25 ? `You stare at the screen. The words swim. You get almost nothing done.` : S.workDone, o); }});
+
+  if(!(f.outageUntil && t<f.outageUntil))
+    A.push({id:'email', label:'Triage your inbox', mins:15, do(){ apply(`Forty-one unread. Twelve are "reply all." You clear what you can.`,{out:4,san:-3}); }});
+
+  if(!f.printed && r.out>=20)
+    A.push({id:'print', label:`Print the ${S.report}`, mins:15, do(){
+      if(r.t>=10*60 && r.t<11*60){ r.t+=30; apply(`PC LOAD LETTER. ${cap(S.printer)} eats page 3, then pages 4 through 19. You lose half an hour fighting it.`,{san:-15},'bad'); learn('printer'); learn('dee'); }
+      else { f.printed=true; apply(`The ${S.report} prints cleanly. Every page. A small miracle.`,{out:15}); } }});
+
+  A.push({id:'coffee', label:'Get coffee', mins:15, do(){ meta.habits.coffee++; apply(`The break room coffee tastes like a burnt penny. It helps anyway.`,{san:hasHabit('coffee')?14:8}); }});
+
+  A.push({id:'chat', label:`Swing by ${S.coworker}'s desk`, mins:20, do(){
+    meta.habits.chat++; f.vent++;
+    const lines=[`Dee lowers her voice: "If that ${S.printer.replace(/^the /,'')} jams one more time, I swear."`, `Dee shows you a spreadsheet she built to track how many times ${S.bossShort} says "mmkay." It's a lot.`, `Dee says she'd follow you anywhere, as long as anywhere is out of this building.`];
+    apply(lines[Math.min(f.vent-1,2)],{std:hasHabit('chat')?10:6,san:4}); if(f.vent>=2) learn('dee'); }});
+
+  A.push({id:'zone', label:'Zone out and stare at the wall', mins:30, do(){
+    meta.habits.zone++; f.zoned++;
+    apply(f.zoned>=2 ? `You realize you haven't done real work in hours. And honestly? It's been great.` : `You watch the ceiling tile above your desk. It has a water stain shaped like Ohio.`,{san:hasHabit('zone')?16:12, std:-2}); }});
+
+  if(lunchWindow)
+    A.push({id:'lunch', label:'Take lunch at Chili Shack', mins:60, do(){ f.lunched=true; apply(`Chili Shack. Your server's suspenders are covered in novelty buttons. You order the same thing as always, because it's always the same day.`,{san:15}); }});
+
+  if(K.fire && !f.warden && t<14*60)
+    A.push({id:'warden', label:'Volunteer as fire warden', mins:10, special:true, do(){ f.warden=true; apply(S.extinguisher,{std:3}); }});
+
+  if(K.gerald && !f.geraldFile && t>=9*60)
+    A.push({id:'gerald', label:'Visit Gerald in Records', mins:20, special:!!f.geraldFriend, do(){
+      if(f.geraldFriend){ f.geraldFile=true; learn('geraldRec');
+        apply(`Gerald looks up for the first time all day. "You saved me cake." He walks straight to a box in the back and hands you ${S.visitorFix}. "You'll be needing this, I believe."`,{std:5,san:5}); }
+      else apply(`Gerald doesn't look up. "They moved me down here in 2009 and forgot. It's fine." You leave him alone.`,{san:-2}); }});
+
+  if(K.printer && f.vent>=2 && f.zoned>=1 && t>=15*60)
+    A.push({id:'field', label:`Take ${S.printer} out to the field`, mins:0, special:true, do(){ ending('field'); }});
+
+  if(t>=9*60)
+    A.push({id:'quit', label:'Walk out', mins:0, danger:true, do(){
+      learn('quit');
+      if(r.san>=75 && f.zoned>=1){ ending('decks'); }
+      else endLoop(`You storm out and slam your car door hard enough to set off the alarm. You drive home furious and fall asleep in your work clothes.`, 'You walked out angry.'); }});
+  return A;
+}
+
+function doAction(a){
+  if(modal) return;
+  run.t += a.mins;
+  a.do();
+  if(run.done) return render();
+  save();
+  advance();
+}
+
+// ---------- Scheduled & random events ----------
+function events(){
+  const r=run, f=r.f, K=meta.know;
+  const list = [
+    {id:'memo', time:8*60+45, ev(){
+      if(f.cover) return {title:`${S.bossShort} stops by`, text:`${S.bossShort} opens his mouth, sees ${S.memo} already attached to everything, and closes it again. "Well. Great. That's... great."`, choices:[{label:'Smile politely', fx(){ apply('He wanders off, deflated.',{std:10,san:5}); }}]};
+      return {title:`Did you get the memo?`, text:S.memoText, choices:[
+        {label:`"Yeah. I got the memo."`, fx(){ apply(`He nods slowly and walks away. You will receive this memo four more times today.`,{std:-8,san:-8}); learn('memo'); }},
+        {label:`Apologize profusely`, fx(){ apply(`You apologize three times. He says "no worries" twice. Everyone loses.`,{std:-3,san:-12}); learn('memo'); }} ]};
+    }},
+    {id:'consult', time:11*60, ev(){
+      learn('consult');
+      const ready = f.zoned>=2 && r.san>=50;
+      return {title:'The Consultants', text:`You're pulled into a conference room with ${S.consultants}. They both have the same haircut. "Walk us through a typical day. What is it, specifically, that you contribute?"`, choices:[
+        {label:'Give the polished answer', fx(){ apply(`You say "cross-functional" three times. They nod and write nothing down.`,{std:5,san:-5}); }},
+        {label:'Tell them the truth', fx(){
+          if(ready){ f.promo=true; apply(`You lean back. "Honestly? I spend most of the day looking busy. Nobody has noticed in years. The incentive structure is broken." They glance at each other and start writing furiously.`,{std:15,san:10}); }
+          else apply(`You try to be honest, but it comes out as a nervous rant. They exchange a look. One of them writes something down and underlines it twice.`,{std:-12,san:-5},'bad'); }} ]};
+    }},
+    {id:'cake', time:12*60, ev(){
+      learn('cake');
+      const ch=[{label:'Grab a slice', fx(){ apply(`It's grocery store sheet cake. The frosting is a color not found in nature. It's perfect.`,{san:8,std:3}); }}];
+      if(!K.gerald) ch.push({label:'Who is that guy in the corner?', fx(){ learn('gerald'); apply(`Someone shrugs. "That's Gerald. Records. He's been here since before the building." The cake runs out right before it gets to him. He doesn't seem surprised.`,{}); }});
+      else ch.push({label:'Give your slice to Gerald', fx(){ f.geraldFriend=true; apply(`You walk your plate to the corner and hand it to Gerald. He stares at it for a long time. "Thank you," he says quietly. "Nobody has ever done that."`,{std:2,san:6}); }});
+      ch.push({label:'Skip it and keep working', fx(){ apply(`You stay at your desk. You can hear them singing.`,{out:4,san:-4}); }});
+      return {title:'Cake in the break room', text:`An email goes out: cake in the break room for ${S.cakeFor}. A crowd forms instantly.`, choices:ch};
+    }},
+    {id:'visitor', time:13*60+30, ev(){
+      learn('visitor');
+      const ch=[];
+      if(f.geraldFile) ch.push({label:`Hand over ${S.visitorFix}`, special:true, fx(){ f.helped=true; r.t+=20; apply(S.visitorWin,{std:12,san:15,out:5}); }});
+      else ch.push({label:'Try to help', fx(){ r.t+=45; apply(`You dig for forty-five minutes. The missing piece is ${S.visitorFix}, and it's buried somewhere in Records. You can't find it.`,{san:-8}); }});
+      ch.push({label:'Send them to another department', fx(){ apply(`"That's actually handled on another floor." It is not handled on another floor.`,{std:-4,san:-3}); }});
+      return {title:`${S.visitor} needs help`, text:S.visitorIntro, choices:ch};
+    }},
+    {id:'meeting', time:14*60, ev(){
+      if(f.warden) return {title:'Fire warden duties', text:`While everyone files into the ${S.meeting}, you're "inspecting extinguishers" in a quiet stairwell. At 2:15 the alarm goes off. You calmly lead everyone outside like a hero.`, choices:[{label:'Bask in it', fx(){ r.t+=15; apply('Several people thank you. You did nothing.',{std:8,san:8}); }}]};
+      return {title:`The ${S.meeting}`, text:`Attendance is mandatory. Slide 1 of 64 is the agenda. At 2:15, someone in the break room burns popcorn and the fire alarm goes off. You stand in the parking lot for half an hour.`, choices:[{label:'Endure it', fx(){ r.t+=45; apply('Forty-five minutes of your life, gone.',{san:-12}); learn('fire'); }}]};
+    }},
+    {id:'saturday', time:16*60+30, ev(){
+      learn('saturday');
+      const ch=[];
+      if(f.knewSat) ch.push({label:'You are already gone', special:true, fx(){ apply(`You knew this was coming, so you're "in the restroom" when ${S.bossShort} drifts by. He leaves a sticky note. You throw it away.`,{san:8}); }});
+      ch.push({label:`"Sure. I'll be here."`, fx(){ apply(`"Great. And Sunday too, probably." You feel something inside you die a little.`,{std:10,san:-20},'bad'); }});
+      ch.push({label:`"Yeah... I'm not gonna be here."`, fx(){ apply(`He blinks. Nobody has ever said that to him. "Mmkay," he says, very uncertainly.`,{std:-12,san:12}); }});
+      return {title:'One more thing...', text:S.satText, choices:ch};
+    }},
+  ];
+  // set knewSat lazily
+  f.knewSat = !!K.saturday;
+  // randoms
+  for(const rd of r.randoms) list.push({id:'r_'+rd.k, time:rd.time, ev:()=>randomEvent(rd.k)});
+  return list.sort((a,b)=>a.time-b.time);
+}
+
+function randomEvent(k){
+  const r=run, f=r.f;
+  const E={
+    outage:{title:'The network is down', text:'IT sends an email, which nobody receives, announcing that email is down for the next hour.', choices:[{label:'Shrug', fx(){ f.outageUntil=r.t+60; apply('No inbox for an hour. Is this freedom?',{san:5}); }}]},
+    survey:{title:'Mandatory morale survey', text:'HR wants to know how engaged you feel on a scale of 1 to 10. It is not anonymous. It says it is anonymous.', choices:[
+      {label:'Answer honestly', fx(){ apply('You give it a 3. Somewhere, a dashboard turns yellow.',{std:-3,san:6}); }},
+      {label:'Put 10s across the board', fx(){ apply('You lie to a form. It somehow feels worse than lying to a person.',{std:3,san:-5}); }} ]},
+    fax:{title:'The fax machine is screaming', text:`The fax machine near your desk starts making a sound like a dial-up modem being strangled. Nobody moves.`, choices:[
+      {label:'Unplug it', fx(){ apply('Blessed silence. Three people silently mouth "thank you."',{std:4}); }},
+      {label:'Put on headphones', fx(){ apply('It screams for forty more minutes.',{san:-6}); }} ]},
+    donuts:{title:'Leftover donuts', text:'Someone left a box of donuts from a meeting you weren\'t invited to.', choices:[{label:'Take two', fx(){ apply('Glazed. Still a little warm. Today is not all bad.',{san:9}); }}]},
+    dee:{title:`${S.coworker} needs to vent`, text:`Dee drops into the chair by your desk. "${S.bossShort} just asked me to redo a report he never read. Do you have five minutes?"`, choices:[
+      {label:'Listen', fx(){ f.vent++; r.t+=15; apply('You listen. She feels better. So do you, oddly.',{std:6,san:3}); learn('dee'); }},
+      {label:'Pretend to be on a call', fx(){ apply('You hold your phone to your ear and say "uh huh" to nobody.',{std:-3}); }} ]},
+    parking:{title:'Bad news from the parking lot', text:'A coworker pokes their head in. "Hey, is the silver sedan yours? Somebody backed into it and drove off."', choices:[{label:'Sigh deeply', fx(){ apply('Of course they did.',{san:-10},'bad'); }}]},
+  };
+  return E[k];
+}
+
+function advance(){
+  if(run.done) return render();
+  if(run.san<=0) return endLoop(`Something snaps. You find yourself standing on your desk, explaining the concept of time to the copy room. Security is very gentle about it.`, 'Sanity hit zero.');
+  if(run.std<=0) return endLoop(`HR calls you in. There's a box on the table with your stuff already in it, including a stapler that isn't yours.`, 'Standing hit zero. You were let go.');
+  const evs = events();
+  for(const e of evs){
+    if(!run.fired[e.id] && run.t>=e.time && e.time<END){
+      run.fired[e.id]=true;
+      modal = e.ev();
+      return render();
+    }
+  }
+  if(run.t>=END) return review();
+  render();
+}
+
+function choose(c){
+  modal=null;
+  c.fx();
+  save();
+  if(run.done) return render();
+  advance();
+}
+
+// ---------- Review & endings ----------
+function review(){
+  learn('review');
+  const r=run, f=r.f;
+  if(f.promo) return ending('promotion');
+  if(f.helped && f.geraldFriend && r.out>=100 && r.std>=40) return ending('goodday');
+  meta.best=Math.max(meta.best, r.out); save();
+  if(r.out>=100 && r.std>=40)
+    return endLoop(`Your ${S.review} goes fine. "Meets expectations." ${S.bossShort} gives you a thumbs-up without looking up from his phone. You drive home, eat dinner, and go to bed early.`, 'You passed. It didn\'t matter.');
+  endLoop(`Your ${S.review} lasts four minutes. ${S.bossShort} reads the words "needs improvement" directly off the form, twice.`, r.out<100?`Output was ${r.out}/100.`:`Standing was ${r.std}/40.`);
+}
+
+function endLoop(text, reason){
+  run.done={type:'loop', text, reason}; save(); render();
+}
+function ending(k){
+  const fresh = !meta.endings[k];
+  meta.endings[k]=meta.loops; save();
+  const txt={
+    promotion:`On Tuesday (it's Tuesday!) the consultants' report comes out. It recommends eliminating half the department and promoting you, because you are "clearly management material." Your new office has a window. You still don't do much. Nobody notices.`,
+    field:`At 3:30 PM you, Dee, and Gerald carry ${S.printer} out a side door and across the street to an empty lot. Somebody has a softball bat. Somebody has a song playing on their phone. Nobody says a word. It takes a long time, and it is beautiful. When you wake up the next morning, the radio says it's Tuesday.`,
+    goodday:`You didn't game the day this time. You spent it on other people: a slice of cake for Gerald, an afternoon for ${S.visitor}, and the work done well because it was worth doing well. ${S.bossShort} says "meets expectations." It does. When you wake up the next morning, the radio says it's Tuesday.`,
+    decks:S.decks+` When you wake up the next morning, the radio says it's Tuesday.`,
+  }[k];
+  run.done={type:'ending', k, text:txt, fresh}; render();
+}
+
+// ---------- Rendering ----------
+const app=document.getElementById('app');
+function h(html){ app.innerHTML=html; }
+function esc(s){ return String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+
+function titleScreen(){
+  run=null; modal=null;
+  const got=Object.keys(meta.endings).length;
+  h(`
+    <h1>Office Disgrace</h1>
+    <p class="tag">A roguelite work simulator. It's Monday. Again.</p>
+    <div class="card">
+      <p>You wake up at 6:47 AM. You go to work. Your performance review is at 5:00.</p>
+      <p>Then you wake up at 6:47 AM. And it's the same Monday.</p>
+      <p style="color:var(--muted);font-size:.9rem">Every loop resets your day, but not what you <i>know</i>. Learn when things happen, use it next time, and find a way to reach Tuesday.</p>
+    </div>
+    <div class="section-title">Choose your career</div>
+    <div class="sector">
+      <button class="btn" onclick="pick('public')"><b>🏛️ Public Sector</b><small>${SECTORS.public.blurb}</small></button>
+      <button class="btn" onclick="pick('private')"><b>🏢 Private Sector</b><small>${SECTORS.private.blurb}</small></button>
+    </div>
+    ${meta.loops?`<div class="section-title">Progress</div>
+    <div class="card">
+      <div>Loops lived: <b>${meta.loops}</b> &nbsp;·&nbsp; Journal entries: <b>${Object.keys(meta.know).length}/${Object.keys(KNOW).length}</b></div>
+      <div style="margin-top:8px">Ways out (${got}/4):<br>${Object.entries(ENDINGS).map(([k,e])=>`<span class="pill ${meta.endings[k]?'got':''}">${meta.endings[k]?e.name:'??? · '+e.hint}</span>`).join('')}</div>
+      <button class="btn danger" style="margin-top:12px;text-align:center" onclick="wipe(this)">Erase all progress</button>
+    </div>`:''}
+    <div class="foot">v0.1 playable mockup · progress saves in this browser</div>`);
+}
+function pick(s){ meta.sector=s; save(); newRun(); }
+function wipe(b){ if(!wipeArmed){ wipeArmed=true; b.textContent='Tap again to confirm'; return; } meta=freshMeta(); save(); wipeArmed=false; titleScreen(); }
+let wipeArmed=false;
+
+function hud(){
+  const m=(k,v,goal)=>`<div class="meter"><label><span>${k}</span><span>${v}</span></label><div class="bar ${v<25?'low':''}"><i style="width:${v}%"></i></div></div>`;
+  return `<div class="hud">
+    <div class="row"><div class="clock">${fmt(Math.min(run.t,END))}</div><div class="loopno">LOOP #${meta.loops}<br>${S.org}</div></div>
+    <div class="meters">${m('Output',run.out)}${m('Standing',run.std)}${m('Sanity',run.san)}</div>
+    <div class="goal">Review at 5:00 PM · needs Output 100 &amp; Standing 40</div>
+  </div>`;
+}
+
+function render(){
+  if(!run) return titleScreen();
+  if(run.done) return doneScreen();
+  const A=actions();
+  const recent=run.log.slice(-6);
+  h(`${hud()}
+    <div class="card log">${recent.map((l,i)=>`<p class="${l.cls} ${i===recent.length-1?'new':''}">${esc(l.txt)}</p>`).join('')}</div>
+    <div class="section-title">What do you do?</div>
+    ${A.map((a,i)=>`<button class="btn ${a.special?'special':''} ${a.danger?'danger':''}" onclick="act(${i})">${esc(a.label)}<small>${a.mins?a.mins+' min':'—'}${a.special?' · ★ you know something':''}</small></button>`).join('')}
+    <div class="section-title">Notes</div>
+    <button class="btn" onclick="showJournal()">📓 Open your journal <small>${Object.keys(meta.know).length} entries · what you've learned across loops</small></button>
+    <button class="btn" onclick="titleScreen()" style="text-align:center">Quit to title <small>this loop's day is lost</small></button>
+    ${modal?modalHtml():''}`);
+  window._A=A;
+}
+function act(i){ doAction(window._A[i]); }
+
+function modalHtml(){
+  window._C=modal.choices;
+  return `<div class="modal"><div class="card"><span class="stamp">${fmt(run.t)}</span><h2>${esc(modal.title)}</h2><p>${esc(modal.text)}</p>
+    ${modal.choices.map((c,i)=>`<button class="btn ${c.special?'special':''}" onclick="pickChoice(${i})">${esc(c.label)}</button>`).join('')}</div></div>`;
+}
+function pickChoice(i){ choose(window._C[i]); }
+
+function showJournal(){
+  const entries=Object.keys(KNOW).filter(k=>meta.know[k]);
+  const hab=Object.entries(HABITS).map(([k,v])=>`<li><b>${v.name}</b> ${hasHabit(k)?'<span class="pill got">unlocked</span>':`<span class="pill">${Math.min(meta.habits[k],v.need)}/${v.need}</span>`}<br><span style="color:var(--muted);font-size:.9rem">${v.desc}</span></li>`).join('');
+  const box=document.createElement('div');
+  box.className='modal';
+  box.innerHTML=`<div class="card memo"><h2>📓 Journal</h2>
+    <p style="color:var(--muted);font-size:.9rem">The day resets. This doesn't.</p>
+    ${entries.length?`<ul class="journal">${entries.map(k=>`<li><span class="t">${KNOW[k].t}</span><br>${esc(KNOW[k].txt(S))}</li>`).join('')}</ul>`:'<p><i>Nothing yet. Live the day and pay attention.</i></p>'}
+    <div class="section-title">Habits (built by repetition)</div><ul class="journal">${hab}</ul>
+    <button class="btn primary" id="closeJ">Close</button></div>`;
+  document.body.appendChild(box);
+  box.querySelector('#closeJ').onclick=()=>box.remove();
+}
+
+function doneScreen(){
+  const d=run.done;
+  if(d.type==='ending'){
+    const got=Object.keys(meta.endings).length;
+    h(`<h1>Tuesday.</h1>
+      <div class="card"><span class="stamp">ENDING ${got}/4${d.fresh?' · NEW':''}</span><h2>${ENDINGS[d.k].name}</h2><p>${esc(d.text)}</p>
+      <p style="color:var(--muted);font-size:.9rem">You broke the loop on loop #${meta.loops}.</p></div>
+      ${got<4?`<p class="tag">There are other ways out of Monday. Want to find them?</p>`:`<p class="tag">You found every way out. You can finally rest. (Thanks for playtesting!)</p>`}
+      <button class="btn primary" onclick="newRun()">Wake up on Monday again<small>keep everything you know</small></button>
+      <button class="btn" onclick="titleScreen()" style="text-align:center">Back to title (switch sectors)</button>`);
+    return;
+  }
+  h(`<h1>${fmt(Math.min(run.t,END))}</h1>
+    <div class="card"><span class="stamp">LOOP #${meta.loops} OVER</span><p>${esc(d.text)}</p><p><b>${esc(d.reason)}</b></p>
+    ${learnedThisLoop.length?`<div class="section-title">Learned this loop</div><ul class="journal">${learnedThisLoop.map(k=>`<li><span class="t">${KNOW[k].t}</span><br>${esc(KNOW[k].txt(S))}</li>`).join('')}</ul>`:'<p style="color:var(--muted)">You didn\'t learn anything new this time.</p>'}
+    </div>
+    <p class="tag">Final: Output ${run.out} · Standing ${run.std} · Sanity ${run.san}</p>
+    <button class="btn primary" onclick="newRun()">⏰ Wake up<small>${esc(S.wake)}</small></button>
+    <button class="btn" onclick="showJournal()" style="text-align:center">📓 Journal</button>
+    <button class="btn" onclick="titleScreen()" style="text-align:center">Back to title</button>`);
+}
+
+titleScreen();
+</script>
+</body>
+</html>
