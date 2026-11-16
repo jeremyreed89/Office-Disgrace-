@@ -11,6 +11,8 @@ Each loop resets your day but not what you know. Learn when things happen, use i
 Open `index.html` in any browser, phone or desktop. Progress saves in the browser.
 
 - Pick **Public Sector** (City of Bramblewood) or **Private Sector** (Veltrix Solutions).
+- Walk the office top-down with arrows/WASD (or the on-screen D-pad), and press **ACT** (E/Space) next to things.
+- Your boss patrols the halls like a castle guard. Step into his vision cone outside your cubicle and he'll lecture you about cover sheets for 20 minutes, then walk you back to your desk.
 - Manage three meters: **Output**, **Standing** and **Sanity**.
 - Scheduled events happen at the same time every loop. A couple of random ones shuffle in each day.
 - Your **Journal** keeps what you learn. **Habits** build up through repetition and make you faster.
@@ -18,4 +20,4 @@ Open `index.html` in any browser, phone or desktop. Progress saves in the browse
 
 ## Status
 
-v0.1 playable mockup for feedback.
+v0.2 top-down playable mockup for feedback.

@@ -2,68 +2,101 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
 <title>Office Disgrace: It's Monday. Again.</title>
 <style>
   :root{
     --bg:#d9d4c3; --panel:#efe9d6; --ink:#2b2a26; --muted:#6d685c; --line:#b7b09a;
     --accent:#2f5d50; --warn:#a4452c; --gold:#b98a2a; --screen:#1f2a22; --glow:#9fe0a8;
   }
-  *{box-sizing:border-box}
-  html,body{margin:0;background:var(--bg);color:var(--ink);font-family:Georgia,'Times New Roman',serif}
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{margin:0;background:var(--bg);color:var(--ink);font-family:Georgia,'Times New Roman',serif;overscroll-behavior:none}
   body{background-image:repeating-linear-gradient(0deg,rgba(0,0,0,.025) 0 2px,transparent 2px 6px)}
-  .wrap{max-width:560px;margin:0 auto;padding:14px 14px 40px}
+  .wrap{max-width:620px;margin:0 auto;padding:10px 12px 30px}
   h1{font-family:'Courier New',monospace;letter-spacing:.06em;margin:.2em 0 0;font-size:2rem;text-transform:uppercase}
   .tag{font-style:italic;color:var(--muted);margin:.2em 0 1em}
   .card{background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:14px;margin:10px 0;box-shadow:0 2px 0 rgba(0,0,0,.06)}
-  .btn{display:block;width:100%;text-align:left;font:inherit;font-size:1rem;background:#fffdf4;border:1px solid var(--line);border-radius:6px;padding:12px 14px;margin:8px 0;cursor:pointer;color:var(--ink)}
+  .btn{display:block;width:100%;text-align:left;font:inherit;font-size:1rem;background:#fffdf4;border:1px solid var(--line);border-radius:6px;padding:11px 14px;margin:7px 0;cursor:pointer;color:var(--ink)}
   .btn:hover{border-color:var(--accent)}
-  .btn:active{transform:translateY(1px)}
   .btn small{display:block;color:var(--muted);font-size:.8rem;margin-top:3px;font-family:'Courier New',monospace}
   .btn.primary{background:var(--accent);color:#fff;border-color:var(--accent);text-align:center}
   .btn.primary small{color:#d6eadf}
   .btn.danger{border-color:var(--warn)}
   .btn.special{border:2px solid var(--gold);background:#fff8e2}
-  .btn:disabled{opacity:.45;cursor:not-allowed}
-  .hud{position:sticky;top:0;z-index:5;background:var(--screen);color:var(--glow);border-radius:6px;padding:10px 12px;font-family:'Courier New',monospace;box-shadow:0 3px 8px rgba(0,0,0,.25)}
-  .hud .row{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
-  .clock{font-size:1.6rem;font-weight:bold;letter-spacing:.05em}
-  .loopno{font-size:.8rem;opacity:.8;text-align:right}
-  .meters{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:8px}
-  .meter label{font-size:.68rem;text-transform:uppercase;letter-spacing:.08em;opacity:.85;display:flex;justify-content:space-between}
-  .bar{height:8px;background:#0e1510;border-radius:4px;overflow:hidden;margin-top:3px}
+  .section-title{font-family:'Courier New',monospace;text-transform:uppercase;font-size:.75rem;letter-spacing:.12em;color:var(--muted);margin:14px 0 4px}
+  .hud{background:var(--screen);color:var(--glow);border-radius:6px 6px 0 0;padding:8px 10px;font-family:'Courier New',monospace}
+  .hud .row{display:flex;justify-content:space-between;align-items:center;gap:8px}
+  .clock{font-size:1.45rem;font-weight:bold;letter-spacing:.05em}
+  .loopno{font-size:.72rem;opacity:.8;text-align:right}
+  .meters{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:6px}
+  .meter label{font-size:.64rem;text-transform:uppercase;letter-spacing:.08em;opacity:.85;display:flex;justify-content:space-between}
+  .bar{height:7px;background:#0e1510;border-radius:4px;overflow:hidden;margin-top:2px}
   .bar i{display:block;height:100%;background:var(--glow);transition:width .4s}
   .bar.low i{background:#e98a6a}
-  .goal{font-size:.72rem;opacity:.75;margin-top:6px}
-  .log p{margin:.45em 0;line-height:1.45}
-  .log p.new{animation:fade .5s}
-  .log .sys{font-family:'Courier New',monospace;font-size:.85rem;color:var(--accent)}
-  .log .bad{color:var(--warn)}
-  .log .learn{font-family:'Courier New',monospace;font-size:.85rem;color:var(--gold)}
-  @keyframes fade{from{opacity:0;transform:translateY(4px)}to{opacity:1}}
-  .section-title{font-family:'Courier New',monospace;text-transform:uppercase;font-size:.75rem;letter-spacing:.12em;color:var(--muted);margin:16px 0 4px}
-  .modal{position:fixed;inset:0;background:rgba(20,20,15,.55);display:flex;align-items:flex-end;justify-content:center;z-index:20;padding:10px}
-  .modal .card{max-width:560px;width:100%;max-height:88vh;overflow:auto;margin:0;border-top:5px solid var(--warn)}
+  .canvasWrap{position:relative;background:#222;line-height:0}
+  canvas{display:block;width:100%;touch-action:none}
+  .toast{position:absolute;left:8px;right:8px;top:8px;background:rgba(31,42,34,.92);color:var(--glow);font-family:'Courier New',monospace;font-size:.85rem;line-height:1.35;padding:8px 10px;border-radius:5px;opacity:0;transition:opacity .3s;pointer-events:none}
+  .toast.on{opacity:1}
+  .toast.bad{color:#ffb39c}
+  .prompt{background:var(--screen);color:#fff;font-family:'Courier New',monospace;font-size:.85rem;padding:6px 10px;min-height:30px;border-radius:0 0 6px 6px;display:flex;justify-content:space-between;align-items:center;gap:8px}
+  .prompt b{color:var(--gold)}
+  .msg{font-size:.9rem;line-height:1.4;min-height:2.8em;margin:8px 2px;color:var(--ink)}
+  .controls{display:flex;justify-content:space-between;align-items:center;margin-top:6px;user-select:none;-webkit-user-select:none;touch-action:none}
+  .dpad{display:grid;grid-template-columns:repeat(3,54px);grid-template-rows:repeat(3,54px);gap:4px}
+  .dpad button,.actbtn,.smallbtn{font:inherit;border:1px solid var(--line);background:#fffdf4;border-radius:10px;color:var(--ink);touch-action:none}
+  .dpad button{font-size:1.4rem}
+  .dpad button.on{background:#e5dfc9}
+  .side{display:flex;flex-direction:column;align-items:flex-end;gap:8px}
+  .actbtn{width:96px;height:96px;border-radius:50%;background:var(--accent);color:#fff;font-weight:bold;font-size:1.1rem;font-family:'Courier New',monospace;border:none;box-shadow:0 3px 0 #1d3b33}
+  .actbtn:active{transform:translateY(2px);box-shadow:0 1px 0 #1d3b33}
+  .smallbtn{padding:6px 10px;font-size:.85rem}
+  .keys{font-size:.72rem;color:var(--muted);text-align:center;font-family:'Courier New',monospace;margin-top:8px}
+  .modal{position:fixed;inset:0;background:rgba(20,20,15,.5);display:flex;align-items:flex-end;justify-content:center;z-index:20;padding:10px}
+  .modal .card{max-width:620px;width:100%;max-height:85vh;overflow:auto;margin:0;border-top:5px solid var(--warn)}
   .modal .card.memo{border-top-color:var(--accent)}
-  .modal h2{margin:.1em 0 .4em;font-size:1.2rem}
+  .modal h2{margin:.1em 0 .4em;font-size:1.15rem}
   .stamp{display:inline-block;font-family:'Courier New',monospace;font-size:.72rem;border:1px solid var(--muted);padding:1px 6px;border-radius:3px;color:var(--muted);margin-bottom:6px}
   .journal li{margin:.5em 0;line-height:1.4}
   .journal .t{font-family:'Courier New',monospace;color:var(--accent);font-size:.85rem}
   .pill{display:inline-block;font-family:'Courier New',monospace;font-size:.75rem;padding:2px 8px;border-radius:10px;background:#e5dfc9;margin:2px 4px 2px 0}
   .pill.got{background:var(--gold);color:#fff}
-  .foot{font-size:.75rem;color:var(--muted);text-align:center;margin-top:24px;font-family:'Courier New',monospace}
+  .foot{font-size:.75rem;color:var(--muted);text-align:center;margin-top:20px;font-family:'Courier New',monospace}
   .sector{display:grid;grid-template-columns:1fr 1fr;gap:10px}
   .sector .btn{text-align:center;padding:16px 10px}
   .sector .btn b{display:block;font-size:1.1rem}
-  a{color:var(--accent)}
+  .hidden{display:none!important}
 </style>
 </head>
 <body>
-<div class="wrap" id="app"></div>
+<div class="wrap">
+  <div id="screen"></div>
+  <div id="game" class="hidden">
+    <div class="hud">
+      <div class="row"><div class="clock" id="clock">8:00 AM</div><div class="loopno" id="loopno"></div></div>
+      <div class="meters" id="meters"></div>
+    </div>
+    <div class="canvasWrap"><canvas id="cv"></canvas><div class="toast" id="toast"></div></div>
+    <div class="prompt"><span id="prompt">Walk up to something and press ACT.</span><span style="opacity:.7;font-size:.75rem">Review 5:00 · Out 100 · Std 40</span></div>
+    <div class="msg" id="msg"></div>
+    <div class="controls">
+      <div class="dpad">
+        <span></span><button data-d="up">▲</button><span></span>
+        <button data-d="left">◀</button><span></span><button data-d="right">▶</button>
+        <span></span><button data-d="down">▼</button><span></span>
+      </div>
+      <div class="side">
+        <button class="actbtn" id="act">ACT</button>
+        <div style="display:flex;gap:6px"><button class="smallbtn" id="jbtn">📓 Journal</button><button class="smallbtn" id="pbtn">⏸</button></div>
+      </div>
+    </div>
+    <div class="keys">Keyboard: arrows / WASD to move · E or Space to act · J journal · P pause</div>
+  </div>
+</div>
+<div id="modalRoot"></div>
 
 <script>
 /* ============================================================
-   OFFICE DISGRACE  v0.1 mockup
+   OFFICE DISGRACE  v0.2  (top-down)
    A roguelite work simulator. Same Monday, every Monday.
    ============================================================ */
 
@@ -72,13 +105,12 @@ const SECTORS = {
   public: {
     label:"Public Sector",
     blurb:"City of Bramblewood. Pension, fluorescent lights, and forms about forms.",
-    org:"City of Bramblewood", dept:"Department of Permits & Code Review", title:"Plans Examiner II",
-    boss:"Deputy Director Lyle Pruitt", bossShort:"Pruitt",
+    org:"City of Bramblewood", title:"Plans Examiner II",
+    bossShort:"Pruitt",
     work:"Review permit applications", workDone:"You review a stack of permit applications. Half are missing a signature on page 4.",
-    workN:"permit reviews",
     report:"Quarterly Performance Measures report",
-    memo:"the revised Form 7-B routing slip",
-    memoText:"Pruitt leans over your cubicle wall with a coffee mug that says WORLD'S OKAYEST SUPERVISOR. \"Hey there. So, all permit reviews now go out with the revised Form 7-B routing slip. Did you not see the memo? I'll make sure you get another copy.\"",
+    memo:"the revised Form 7-B routing slip", sheet:"routing slip",
+    memoText:"Pruitt leans over your cubicle wall with a mug that says WORLD'S OKAYEST SUPERVISOR. \"Hey there. So, all permit reviews now go out with the revised Form 7-B routing slip. Did you not see the memo? I'll make sure you get another copy.\"",
     consultants:"two efficiency consultants hired by the City Manager's office",
     coworker:"Dee from Zoning",
     visitor:"Mrs. Okafor",
@@ -87,274 +119,360 @@ const SECTORS = {
     visitorWin:"With the 1987 survey in hand, the problem takes eleven minutes to fix. Mrs. Okafor shakes your hand with both of hers. \"Nobody in this building has ever actually helped me.\"",
     review:"annual performance evaluation",
     meeting:"mandatory all-staff budget briefing",
-    printer:"the shared copier on the third floor",
+    printer:"the shared copier", printerShort:"copier",
     cakeFor:"someone in Fleet Services you have never met",
     extinguisher:"You sign up as floor fire warden. It comes with a vest.",
     satText:"Pruitt appears, mug first. \"So. Council wants the measures report re-run before Monday. We'll be needing you in this Saturday. Mmkay? Super.\"",
     wake:"6:47 AM. The clock radio clicks on. Same traffic report. Same pothole on Elm Street.",
-    decks:"You leave your badge on the keyboard and walk out into the sunlight. By Friday, you're working on a landscaping crew that maintains the city's medians. You've never been happier. You don't even mind the heat.",
+    decks:"You set your badge on the keyboard and walk out into the sunlight. By Friday, you're on a landscaping crew that maintains the city's medians. You've never been happier. You don't even mind the heat.",
   },
   private: {
     label:"Private Sector",
     blurb:"Veltrix Solutions. Synergy, stock options that will never vest, and reports nobody reads.",
-    org:"Veltrix Solutions", dept:"Integrated Reporting Group", title:"Reporting Analyst II",
-    boss:"Regional VP Doug Fennimore", bossShort:"Fennimore",
-    work:"Grind through QRS reports", workDone:"You grind through QRS reports. Each one is the same as the last one, but with a different date.",
-    workN:"QRS reports",
+    org:"Veltrix Solutions", title:"Reporting Analyst II",
+    bossShort:"Fennimore",
+    work:"Grind through QRS reports", workDone:"You grind through QRS reports. Each one is the same as the last one, with a different date.",
     report:"Quarterly Synergy Report",
-    memo:"the new QRS cover sheet",
-    memoText:"Fennimore drifts up to your cubicle holding a coffee mug that says SYNERGY. \"Hey there. So, all QRS reports go out with the new cover sheet now. Did you not get the memo? I'll make sure you get another copy.\"",
+    memo:"the new QRS cover sheet", sheet:"cover sheet",
+    memoText:"Fennimore drifts up to your cubicle holding a mug that says SYNERGY. \"Hey there. So, all QRS reports go out with the new cover sheet now. Did you not get the memo? I'll make sure you get another copy.\"",
     consultants:"two consultants from Thorne & Pike, brought in to \"right-size\" the department",
     coworker:"Dee from Accounts Payable",
     visitor:"Priya the intern",
-    visitorIntro:"Priya, the new intern, is quietly panicking at the next desk. The client deck is due at 3:00 and the source data has vanished from the shared drive.",
+    visitorIntro:"Priya, the new intern, is waiting by the front desk, quietly panicking. The client deck is due at 3:00 and the source data has vanished from the shared drive.",
     visitorFix:"the archived 2019 client file",
     visitorWin:"With the 2019 file in hand, the deck comes together in twenty minutes. Priya looks at you like you just pulled her out of a river. \"Nobody here has ever actually helped me.\"",
     review:"quarterly performance review",
     meeting:"mandatory all-hands on the Five Synergy Pillars",
-    printer:"the cursed printer on the second floor",
+    printer:"the cursed printer", printerShort:"printer",
     cakeFor:"someone in Marketing you have never met",
     extinguisher:"You sign up as floor safety captain. It comes with a lanyard.",
     satText:"Fennimore appears, mug first. \"So. The client moved up the Synergy deadline. We'll be needing you in this Saturday. Mmkay? Super.\"",
     wake:"6:47 AM. The alarm goes off. The same morning DJ makes the same joke about Mondays.",
-    decks:"You leave your badge on the keyboard and walk out into the sunlight. By Friday, you're working for a guy named Lou who builds backyard decks. You've never been happier. You don't even miss the stock options.",
+    decks:"You set your badge on the keyboard and walk out into the sunlight. By Friday, you're working for a guy named Lou who builds backyard decks. You've never been happier. You don't even miss the stock options.",
   }
 };
 
-// ---------- Knowledge (persists across loops) ----------
+const COVER_TALK = [
+  s=>`"Hey, hey, hold on there. Quick question about the ${s.sheet}. You're using the new one, right? The one with the box in the upper left? Because the old one had the box in the upper right..."`,
+  s=>`"There you are. So I was looking at the ${s.sheet} thing again, and I want to walk you through the three different shades of the header. It matters more than you think..."`,
+  s=>`"Hey there. Not to be a stickler, but let's talk ${s.sheet}s. Did you know there's a version history? Let me take you through it, starting in 2014..."`,
+  s=>`"Mmkay, so, real quick, ${s.sheet}s. Staple goes top left, at a forty-five degree angle. Let me show you on this one. Actually, let's do a few..."`,
+  s=>`"Oh good, I've been looking for you. I made a little slideshow about the ${s.sheet}. It's only eleven slides. Walk with me..."`,
+];
+
+// ---------- Knowledge ----------
 const KNOW = {
-  memo:      {t:"8:45", txt:s=>`${s.bossShort} comes by about ${s.memo}. Attach it before he gets there.`},
+  boss:      {t:"All day", txt:s=>`${s.bossShort} patrols the halls. If you're anywhere but your cubicle and you walk into his line of sight, he talks at you about ${s.sheet}s and walks you back to your desk. Watch his cone.`},
+  memo:      {t:"8:45", txt:s=>`${s.bossShort} comes by about ${s.memo}. Attach it at your desk before he gets there.`},
   printer:   {t:"10:00-11:00", txt:s=>`${cap(s.printer)} jams if you print between 10 and 11. Every time.`},
-  consult:   {t:"11:00", txt:s=>`The consultants interview you. They seem to respect people who have stopped pretending.`},
-  cake:      {t:"12:00", txt:s=>`Birthday cake in the break room for ${s.cakeFor}.`},
+  consult:   {t:"11:00-11:20", txt:s=>`The consultants wait in the conference room for 20 minutes. Miss them and it counts against you. They seem to respect people who have stopped pretending and are at peace with it.`},
+  cake:      {t:"12:00-12:30", txt:s=>`Birthday cake in the break room for ${s.cakeFor}. It's gone by 12:30.`},
   gerald:    {t:"12:00", txt:s=>`Gerald from Records sits in the corner at every cake. Nobody has ever saved him a slice.`},
-  geraldRec: {t:"Any time", txt:s=>`Gerald knows where everything in the archive is. He just needs a reason to care.`},
-  visitor:   {t:"1:30", txt:s=>`${s.visitor} needs ${s.visitorFix}. It's somewhere in Records.`},
-  fire:      {t:"2:15", txt:s=>`Someone burns popcorn during the ${s.meeting}. The fire alarm goes off. Volunteer as fire warden before 2:00 and you skip the whole thing.`},
-  saturday:  {t:"4:30", txt:s=>`${s.bossShort} asks you to come in Saturday. If you know it's coming, you can be "already gone."`},
-  review:    {t:"5:00", txt:s=>`Passing the review takes Output 100 and Standing 40. Passing alone doesn't end the loop. Something else has to change.`},
-  dee:       {t:"Any time", txt:s=>`${s.coworker} has fantasies about what she'd do to ${s.printer}. She'd help, if you asked enough.`},
-  quit:      {t:"Any time", txt:s=>`Walking out angry just resets the day. Walking out calm might be different.`},
+  bat:       {t:"Any time", txt:s=>`Gerald still has his softball bat from the 1994 company league. "In case of emergencies."`},
+  visitor:   {t:"1:30-3:15", txt:s=>`${s.visitor} is at the front counter. The fix is ${s.visitorFix}, somewhere in Records.`},
+  fire:      {t:"2:00", txt:s=>`Someone burns popcorn during the ${s.meeting} and the fire alarm goes off. The fire warden sign-up sheet is on the bulletin board outside the break room.`},
+  saturday:  {t:"4:30", txt:s=>`${s.bossShort} hunts you down to ask about Saturday. He never checks the stairwell.`},
+  review:    {t:"5:00", txt:s=>`Passing the review takes Output 100 and Standing 40. Passing alone doesn't end the loop.`},
+  dee:       {t:"Any time", txt:s=>`${s.coworker} has detailed fantasies about what she'd do to ${s.printer}. Get to know her and she'd help.`},
+  quit:      {t:"Any time", txt:s=>`Storming out just resets the day. The version of you who leaves for good is at peace (Sanity 85+), has done an honest day's work first (Output 60+), packs the family photo from the desk, says goodbye to Dee, and gets out the front door without ${s.bossShort} seeing the box.`},
 };
 
 const ENDINGS = {
   promotion:{name:"Management Material", hint:"Impress the consultants."},
   field:    {name:"The Field", hint:"Some machines need to be dealt with."},
   goodday:  {name:"The Good Monday", hint:"Spend the day on other people."},
-  decks:    {name:"Walked Out Into the Sun", hint:"Leave, but on your own terms."},
+  decks:    {name:"Walked Out Into the Sun", hint:"Leave, on your own terms."},
 };
 
 const HABITS = {
-  work:  {need:6, name:"Muscle Memory", desc:"Work takes 45 minutes instead of 60."},
+  work:  {need:6, name:"Muscle Memory", desc:"Work takes 40 minutes instead of 50."},
   coffee:{need:5, name:"Bean Whisperer", desc:"Coffee restores more Sanity."},
   chat:  {need:5, name:"Hallway Diplomat", desc:"Chatting earns more Standing."},
   zone:  {need:4, name:"Thousand-Yard Stare", desc:"Zoning out restores more Sanity."},
+  sneak: {need:40, name:"Cubicle Ninja", desc:"You walk faster. Built by walking around."},
 };
 
-const START=8*60, END=17*60;
+const START=8*60, END=17*60, MIN_PER_SEC=1/0.7;
 const cap = s => s.charAt(0).toUpperCase()+s.slice(1);
-const fmt = m => { let h=Math.floor(m/60), mm=m%60, ap=h>=12?'PM':'AM'; h=h%12||12; return `${h}:${String(mm).padStart(2,'0')} ${ap}`; };
+const fmt = m => { m=Math.floor(m); let h=Math.floor(m/60), mm=m%60, ap=h>=12?'PM':'AM'; h=h%12||12; return `${h}:${String(mm).padStart(2,'0')} ${ap}`; };
 const clamp = v => Math.max(0,Math.min(100,v));
+const esc = s => String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 
 // ---------- Persistence ----------
-const SAVE_KEY='officeDisgrace_v1';
+const SAVE_KEY='officeDisgrace_v2';
 let meta = load() || freshMeta();
-function freshMeta(){ return {loops:0, know:{}, habits:{work:0,coffee:0,chat:0,zone:0}, endings:{}, sector:null, best:0}; }
-function load(){ try{ return JSON.parse(localStorage.getItem(SAVE_KEY)); }catch(e){ return null; } }
+function freshMeta(){ return {loops:0, know:{}, habits:{work:0,coffee:0,chat:0,zone:0,sneak:0}, endings:{}, sector:null}; }
+function load(){ try{ const m=JSON.parse(localStorage.getItem(SAVE_KEY)); if(m&&m.habits&&m.habits.sneak==null) m.habits.sneak=0; return m; }catch(e){ return null; } }
 function save(){ try{ localStorage.setItem(SAVE_KEY, JSON.stringify(meta)); }catch(e){} }
 function hasHabit(k){ return meta.habits[k] >= HABITS[k].need; }
 
-let S; // sector text
-let run = null;
-let learnedThisLoop = [];
-let modal = null;
+// ============================================================
+//  MAP
+// ============================================================
+const W=36, H=24;
+// 0 floor, 1 wall, 2 partition, 3 counter, 4 front door
+const grid = Array.from({length:H},()=>Array(W).fill(0));
+function wallRect(x0,y0,x1,y1){ for(let x=x0;x<=x1;x++){grid[y0][x]=1;grid[y1][x]=1;} for(let y=y0;y<=y1;y++){grid[y][x0]=1;grid[y][x1]=1;} }
+function setT(x,y,v){ grid[y][x]=v; }
+(function buildMap(){
+  wallRect(0,0,W-1,H-1);
+  wallRect(0,0,8,6);  setT(4,6,0);                 // boss office
+  wallRect(8,0,19,6); setT(13,6,0); setT(14,6,0);  // conference
+  wallRect(19,0,27,6); setT(23,6,0);               // break room
+  wallRect(27,0,35,6); setT(31,6,0);               // copy room
+  wallRect(27,12,35,23); setT(27,16,0); setT(27,17,0); // records
+  wallRect(0,18,5,23); setT(3,18,0);               // stairwell
+  wallRect(8,19,24,23); for(let x=9;x<=21;x++) setT(x,19,3); setT(23,19,0); // lobby + counter
+  setT(16,23,4);                                   // front door
+  for(const cy of [8,13]) for(const cx of [2,6,10,14,18,22]){
+    for(let x=cx;x<=cx+2;x++) setT(x,cy,2);
+    for(let y=cy+1;y<=cy+2;y++){ setT(cx,y,2); setT(cx+2,y,2); }
+  }
+})();
+const blocking = (x,y)=>{ if(x<0||y<0||x>=W||y>=H) return true; return grid[y][x]>=1; };
+const inR = (p,x0,y0,x1,y1)=> p.x>=x0 && p.x<x1+1 && p.y>=y0 && p.y<y1+1;
+const REG = {
+  cube:[11,9,11,11], boss:[1,1,7,5], conf:[9,1,18,5], brk:[20,1,26,5], copy:[28,1,34,5],
+  rec:[28,13,34,22], stair:[1,19,4,22], lobby:[9,20,23,22],
+};
+function regionName(p){
+  if(inR(p,...REG.cube)) return 'Your cubicle';
+  if(inR(p,...REG.boss)) return `${S.bossShort}'s office`;
+  if(inR(p,...REG.conf)) return 'Conference room';
+  if(inR(p,...REG.brk)) return 'Break room';
+  if(inR(p,...REG.copy)) return 'Copy room';
+  if(inR(p,...REG.rec)) return 'Records';
+  if(inR(p,...REG.stair)) return 'Stairwell';
+  if(inR(p,...REG.lobby)) return 'Lobby';
+  return 'Hallway';
+}
 
-function learn(k){
-  if(!meta.know[k]){ meta.know[k]=true; learnedThisLoop.push(k); save();
-    say(`NOTED IN JOURNAL: ${KNOW[k].txt(S)}`,'learn'); }
-}
-function say(txt,cls=''){ run.log.push({txt,cls}); if(run.log.length>40) run.log.shift(); }
+// ============================================================
+//  STATE
+// ============================================================
+let S, run=null, modal=null, menuOpen=false, paused=false, journalOpen=false, learnedThisLoop=[];
+const player = {x:11.5,y:10.4,carry:null};
+const boss = {x:4.5,y:3.5,ang:Math.PI/2,baseAng:Math.PI/2,wp:0,wait:0,alert:0,chase:false,look:0};
+const BOSS_PATH = [[4.5,3.5,3],[4.5,7.5,0],[24.5,7.5,1.5],[25.5,11.5,0],[1.5,11.5,1.5],[1.5,17.5,0],[25.5,17.5,1.5],[25.5,7.5,0],[4.5,7.5,0]];
+const VIEW_R=5.2, VIEW_HALF=0.62;
+
+function learn(k){ if(!meta.know[k]){ meta.know[k]=true; learnedThisLoop.push(k); save(); toast(`📓 Journal: ${KNOW[k].txt(S).slice(0,80)}...`); } }
+function say(t){ document.getElementById('msg').textContent=t; }
 function adj(o){ if(o.out) run.out=clamp(run.out+o.out); if(o.std) run.std=clamp(run.std+o.std); if(o.san) run.san=clamp(run.san+o.san); }
-function delta(o){
-  const p=[]; if(o.out) p.push(`Output ${o.out>0?'+':''}${o.out}`); if(o.std) p.push(`Standing ${o.std>0?'+':''}${o.std}`); if(o.san) p.push(`Sanity ${o.san>0?'+':''}${o.san}`);
-  return p.length?` [${p.join(', ')}]`:'';
-}
-function apply(txt,o,cls=''){ adj(o); say(txt+delta(o),cls); }
+function delta(o){ const p=[]; if(o.out) p.push(`Output ${o.out>0?'+':''}${o.out}`); if(o.std) p.push(`Standing ${o.std>0?'+':''}${o.std}`); if(o.san) p.push(`Sanity ${o.san>0?'+':''}${o.san}`); return p.length?` [${p.join(', ')}]`:''; }
+function apply(t,o){ adj(o); say(t+delta(o)); }
+let toastT=0;
+function toast(t,bad){ const el=document.getElementById('toast'); el.textContent=t; el.className='toast on'+(bad?' bad':''); toastT=3.5; }
 
 // ---------- Run setup ----------
-const RANDOM_POOL = ['outage','survey','fax','donuts','dee','parking'];
+const RANDOM_POOL=['outage','survey','fax','donuts','dee','parking'];
 function newRun(){
-  S = SECTORS[meta.sector];
-  meta.loops++; save();
-  learnedThisLoop=[];
+  S=SECTORS[meta.sector]; meta.loops++; save(); learnedThisLoop=[];
   const pool=[...RANDOM_POOL].sort(()=>Math.random()-.5).slice(0,2);
-  const slots=[9*60+30, 15*60+15].sort(()=>Math.random()-.5);
-  run = {t:START, out:0, std:50, san:70, log:[], fired:{}, f:{zoned:0, vent:0}, randoms:pool.map((k,i)=>({k, time:slots[i]}))};
-  say(S.wake,'sys');
-  say(`You are a ${S.title} in the ${S.dept}, ${S.org}. Your ${S.review} is at 5:00 PM. You need Output 100 and Standing 40 to pass.`);
-  if(meta.loops>1) say(`Wait. You've lived this exact day before. This is loop #${meta.loops}.`,'sys');
-  render();
+  const slots=[9*60+35, 15*60+40].sort(()=>Math.random()-.5);
+  run={t:START,out:0,std:50,san:70,fired:{},f:{zoned:0,vent:0,graceUntil:0},randoms:pool.map((k,i)=>({k,time:slots[i]}))};
+  Object.assign(player,{x:11.5,y:10.4,carry:null});
+  Object.assign(boss,{x:4.5,y:3.5,ang:Math.PI/2,baseAng:Math.PI/2,wp:0,wait:3,alert:0,chase:false,look:0});
+  modal=null; menuOpen=false; paused=false; journalOpen=false;
+  show('game'); sizeCanvas();
+  say(`${S.wake} You're a ${S.title} at ${S.org}. Your ${S.review} is at 5:00 PM.`);
+  toast(meta.loops>1?`Loop #${meta.loops}. You've lived this exact Monday before.`:`Walk with the arrows. Stand next to things and press ACT. Stay out of the yellow cone.`);
+  renderHud();
 }
 
-// ---------- Actions ----------
-function actions(){
-  const r=run, f=r.f, t=r.t, K=meta.know, A=[];
-  const lunchWindow = t>=11*60+30 && t<13*60+30 && !f.lunched;
-
-  if(K.memo && !f.cover && t<8*60+45)
-    A.push({id:'cover', label:`Attach ${S.memo} to everything`, mins:10, special:true, do(){ f.cover=true; apply(`You staple ${S.memo} to every outgoing file. It feels petty and wonderful.`,{}); }});
-
-  A.push({id:'work', label:S.work, mins:hasHabit('work')?45:60, do(){
-    meta.habits.work++; const o = r.san<25 ? {out:6,san:-6} : {out:12,san:-6};
-    apply(r.san<25 ? `You stare at the screen. The words swim. You get almost nothing done.` : S.workDone, o); }});
-
-  if(!(f.outageUntil && t<f.outageUntil))
-    A.push({id:'email', label:'Triage your inbox', mins:15, do(){ apply(`Forty-one unread. Twelve are "reply all." You clear what you can.`,{out:4,san:-3}); }});
-
-  if(!f.printed && r.out>=20)
-    A.push({id:'print', label:`Print the ${S.report}`, mins:15, do(){
-      if(r.t>=10*60 && r.t<11*60){ r.t+=30; apply(`PC LOAD LETTER. ${cap(S.printer)} eats page 3, then pages 4 through 19. You lose half an hour fighting it.`,{san:-15},'bad'); learn('printer'); learn('dee'); }
-      else { f.printed=true; apply(`The ${S.report} prints cleanly. Every page. A small miracle.`,{out:15}); } }});
-
-  A.push({id:'coffee', label:'Get coffee', mins:15, do(){ meta.habits.coffee++; apply(`The break room coffee tastes like a burnt penny. It helps anyway.`,{san:hasHabit('coffee')?14:8}); }});
-
-  A.push({id:'chat', label:`Swing by ${S.coworker}'s desk`, mins:20, do(){
-    meta.habits.chat++; f.vent++;
-    const lines=[`Dee lowers her voice: "If that ${S.printer.replace(/^the /,'')} jams one more time, I swear."`, `Dee shows you a spreadsheet she built to track how many times ${S.bossShort} says "mmkay." It's a lot.`, `Dee says she'd follow you anywhere, as long as anywhere is out of this building.`];
-    apply(lines[Math.min(f.vent-1,2)],{std:hasHabit('chat')?10:6,san:4}); if(f.vent>=2) learn('dee'); }});
-
-  A.push({id:'zone', label:'Zone out and stare at the wall', mins:30, do(){
-    meta.habits.zone++; f.zoned++;
-    apply(f.zoned>=2 ? `You realize you haven't done real work in hours. And honestly? It's been great.` : `You watch the ceiling tile above your desk. It has a water stain shaped like Ohio.`,{san:hasHabit('zone')?16:12, std:-2}); }});
-
-  if(lunchWindow)
-    A.push({id:'lunch', label:'Take lunch at Chili Shack', mins:60, do(){ f.lunched=true; apply(`Chili Shack. Your server's suspenders are covered in novelty buttons. You order the same thing as always, because it's always the same day.`,{san:15}); }});
-
-  if(K.fire && !f.warden && t<14*60)
-    A.push({id:'warden', label:'Volunteer as fire warden', mins:10, special:true, do(){ f.warden=true; apply(S.extinguisher,{std:3}); }});
-
-  if(K.gerald && !f.geraldFile && t>=9*60)
-    A.push({id:'gerald', label:'Visit Gerald in Records', mins:20, special:!!f.geraldFriend, do(){
-      if(f.geraldFriend){ f.geraldFile=true; learn('geraldRec');
-        apply(`Gerald looks up for the first time all day. "You saved me cake." He walks straight to a box in the back and hands you ${S.visitorFix}. "You'll be needing this, I believe."`,{std:5,san:5}); }
-      else apply(`Gerald doesn't look up. "They moved me down here in 2009 and forgot. It's fine." You leave him alone.`,{san:-2}); }});
-
-  if(K.printer && f.vent>=2 && f.zoned>=1 && t>=15*60)
-    A.push({id:'field', label:`Take ${S.printer} out to the field`, mins:0, special:true, do(){ ending('field'); }});
-
-  if(t>=9*60)
-    A.push({id:'quit', label:'Walk out', mins:0, danger:true, do(){
-      learn('quit');
-      if(r.san>=75 && f.zoned>=1){ ending('decks'); }
-      else endLoop(`You storm out and slam your car door hard enough to set off the alarm. You drive home furious and fall asleep in your work clothes.`, 'You walked out angry.'); }});
-  return A;
+// ============================================================
+//  INTERACTABLES
+// ============================================================
+function objects(){
+  const r=run, f=r.f, K=meta.know, t=r.t;
+  const lunchOK = t>=11*60+30 && t<13*60+30 && !f.lunched;
+  return [
+    {id:'desk', name:'Your desk', x:11.5,y:9.6,r:1.0, acts:()=>{
+      const A=[];
+      if(K.memo && !f.cover && t<8*60+45) A.push({label:`Attach ${S.memo} to everything`, mins:10, special:true, do(){ f.cover=true; apply(`You staple ${S.memo} to every outgoing file. It feels petty and wonderful.`,{}); }});
+      A.push({label:S.work, mins:hasHabit('work')?40:50, do(){ meta.habits.work++; const low=r.san<25; apply(low?`You stare at the screen. The words swim. Almost nothing gets done.`:S.workDone, low?{out:5,san:-6}:{out:12,san:-6}); }});
+      if(!(f.outageUntil && t<f.outageUntil)) A.push({label:'Triage your inbox', mins:15, do(){ apply(`Forty-one unread. Twelve are "reply all." You clear what you can.`,{out:4,san:-3}); }});
+      A.push({label:'Zone out and stare at the wall', mins:30, do(){ meta.habits.zone++; f.zoned++; apply(f.zoned>=2?`You haven't done real work in a while. And honestly? It's been great.`:`You study the ceiling tile above your desk. The water stain is shaped like Ohio.`,{san:hasHabit('zone')?16:12,std:-2}); }});
+      if(K.quit && !player.carry) A.push({label:'Pack the family photo into a box', mins:5, special:true, do(){ player.carry='box'; apply(`You put the photo, your good pen, and the desk plant into a copier-paper box. It's not much. It's yours.`,{san:4}); toast(`Carrying a box. Don't let ${S.bossShort} see it.`); }});
+      if(player.carry==='box') A.push({label:'Unpack the box', mins:5, do(){ player.carry=null; say(`You put everything back. Not today.`); }});
+      return A; }},
+    {id:'dee', name:S.coworker, x:19.5,y:14.6,r:1.8, acts:()=>{
+      const A=[{label:'Chat with Dee', mins:20, do(){ meta.habits.chat++; f.vent++;
+        const lines=[`Dee lowers her voice: "If ${S.printer} jams one more time, I swear."`, `Dee shows you a spreadsheet tracking how many times ${S.bossShort} says "mmkay." It's a lot.`, `Dee says she'd follow you anywhere, as long as anywhere is out of this building.`];
+        apply(lines[Math.min(f.vent-1,2)],{std:hasHabit('chat')?10:6,san:4}); if(f.vent>=2) learn('dee'); }}];
+      if(K.quit && !f.goodbye) A.push({label:'Tell Dee you are leaving for good', mins:15, special:true, do(){ f.goodbye=true; apply(`Dee is quiet for a second. Then she grins. "Good. One of us should." She hugs you, briefly, like it's against policy. It probably is.`,{san:8}); }});
+      return A; }},
+    {id:'coffee', name:'Coffee machine', x:25.5,y:2.2,r:1.2, acts:()=>[{label:'Get coffee', mins:15, do(){ meta.habits.coffee++; apply(`The break room coffee tastes like a burnt penny. It helps anyway.`,{san:hasHabit('coffee')?14:8}); }}]},
+    {id:'vend', name:'Vending machine', x:33.5,y:7.6,r:1.3, acts:()=>[{label:'Buy a sad granola bar', mins:5, do(){ apply(`It gets stuck. You shake the machine. It drops two. Today's best moment.`,{san:5}); }}]},
+    {id:'board', name:'Bulletin board', x:21.5,y:7.2,r:1.1, acts:()=>{
+      const A=[{label:'Read the bulletin board', mins:5, do(){ say(`A flyer for a lost stapler. A chili cook-off sign-up from 2019. A fire warden sign-up sheet with zero names on it.`); }}];
+      if(K.fire && !f.warden && t<14*60) A.push({label:'Sign up as fire warden', mins:5, special:true, do(){ f.warden=true; apply(S.extinguisher,{std:3}); }});
+      return A; }},
+    {id:'printer', name:cap(S.printerShort), x:31.5,y:2.3,r:1.3, hide:()=>player.carry==='printer', acts:()=>{
+      const A=[];
+      if(!f.printed) A.push({label:`Print the ${S.report}`, mins:15, do(){
+        if(r.out<20){ say(`There's nothing to print yet. Get some work done first (Output 20+).`); r.t-=15; return; }
+        if(r.t>=10*60 && r.t<11*60){ r.t+=30; apply(`PC LOAD LETTER. ${cap(S.printer)} eats page 3, then pages 4 through 19. You lose half an hour fighting it.`,{san:-15}); learn('printer'); }
+        else { f.printed=true; apply(`The ${S.report} prints cleanly. Every page. A small miracle.`,{out:15}); } }});
+      if(K.printer && K.bat && f.vent>=2 && f.geraldFriend && t>=15*60 && !player.carry)
+        A.push({label:`Unplug ${S.printer}. It's time.`, mins:5, special:true, do(){ player.carry='printer'; apply(`Dee and Gerald appear in the doorway like they knew. Now get it out the front door without ${S.bossShort} seeing.`,{san:5}); toast(`Carrying ${S.printer}. You're slow. Avoid ${S.bossShort}.`); }});
+      if(!A.length) A.push({label:`Glare at ${S.printer}`, mins:2, do(){ say(`It blinks its little orange light at you. Mocking.`); }});
+      return A; }},
+    {id:'gerald', name:'Gerald (Records)', x:32.5,y:17.6,r:1.7, acts:()=>{
+      if(!K.gerald) return [{label:'Say hello', mins:10, do(){ say(`Gerald doesn't look up. His nameplate says GERALD in letters someone printed in 2004.`); learn('gerald'); }}];
+      if(f.geraldFriend && !f.geraldFile) return [{label:`Ask Gerald for help`, mins:20, special:true, do(){ f.geraldFile=true; learn('bat');
+        apply(`Gerald looks up. "You saved me cake." He walks straight to a box in the back and hands you ${S.visitorFix}. You notice a softball bat leaning in the corner. "1994 company league," he says. "In case of emergencies."`,{std:5,san:5}); }}];
+      if(f.geraldFile) return [{label:'Thank Gerald again', mins:5, do(){ say(`Gerald nods. He almost smiles.`); }}];
+      return [{label:'Ask Gerald for help', mins:10, do(){ apply(`Gerald doesn't look up. "They moved me down here in 2009 and forgot. It's fine." You leave him alone.`,{san:-2}); }}]; }},
+    {id:'counter', name:'Front counter', x:15.5,y:19.5,r:1.6, acts:()=>{
+      if(visitorHere()) return [{label:`Talk to ${S.visitor}`, mins:0, special:!!f.geraldFile, do(){ modal=visitorEvent(); }}];
+      return [{label:'Ring the little bell', mins:1, do(){ say(`Ding. Nobody comes. You are the one who is supposed to come.`); }}]; }},
+    {id:'exit', name:'Front door', x:16.5,y:22.3,r:1.3, acts:()=>{
+      if(player.carry==='printer') return [{label:`Haul ${S.printer} out the front door`, mins:0, special:true, do(){ ending('field'); }}];
+      const A=[];
+      if(lunchOK && !player.carry) A.push({label:'Take lunch at Chili Shack', mins:60, do(){ f.lunched=true; apply(`Chili Shack. Your server's suspenders are covered in novelty buttons. You order the same thing as always, because it's always the same day.`,{san:15}); }});
+      if(t>=9*60) A.push({label:'Walk out', mins:0, danger:true, do(){
+        const ready = K.quit && player.carry==='box' && f.goodbye && r.san>=85 && r.out>=60;
+        learn('quit');
+        if(ready) ending('decks');
+        else endLoop(`You storm out and slam your car door hard enough to set off the alarm. You drive home furious and fall asleep in your work clothes.`, 'You walked out angry.'); }});
+      if(!A.length) A.push({label:'Look outside', mins:2, do(){ say(`It's a beautiful day. You can't remember the last time you saw one from the outside.`); }});
+      return A; }},
+    {id:'stairs', name:'Stairwell', x:2.5,y:20.5,r:1.6, acts:()=>[{label:'Sit on the stairs for a minute', mins:15, do(){ apply(`It's quiet. Nobody comes in here. Nobody.`,{san:7}); }}]},
+  ].filter(o=>!(o.hide&&o.hide()));
+}
+function visitorHere(){ const t=run.t; return t>=13*60+30 && t<15*60+15 && !run.f.visitorDone; }
+function nearest(){
+  let best=null, bd=1e9;
+  for(const o of objects()){ const d=Math.hypot(player.x-o.x, player.y-o.y); if(d<=o.r && d<bd){ bd=d; best=o; } }
+  return best;
+}
+function openMenu(o){
+  const A=o.acts(); menuOpen=true;
+  showModal(`<span class="stamp">${fmt(run.t)} · ${esc(regionName(player))}</span><h2>${esc(o.name)}</h2>
+    ${A.map((a,i)=>`<button class="btn ${a.special?'special':''} ${a.danger?'danger':''}" data-i="${i}">${esc(a.label)}<small>${a.mins?a.mins+' min':''}${a.special?(a.mins?' · ':'')+'★ you know something':''}</small></button>`).join('')}
+    <button class="btn" data-i="x" style="text-align:center">Never mind</button>`, 'memo', i=>{
+      closeModal(); menuOpen=false;
+      if(i==='x') return;
+      const a=A[+i]; run.t+=a.mins; a.do(); save(); afterChange();
+    });
 }
 
-function doAction(a){
-  if(modal) return;
-  run.t += a.mins;
-  a.do();
-  if(run.done) return render();
-  save();
-  advance();
-}
-
-// ---------- Scheduled & random events ----------
-function events(){
-  const r=run, f=r.f, K=meta.know;
-  const list = [
+// ============================================================
+//  EVENTS
+// ============================================================
+function scheduled(){
+  const r=run, f=r.f;
+  return [
     {id:'memo', time:8*60+45, ev(){
-      if(f.cover) return {title:`${S.bossShort} stops by`, text:`${S.bossShort} opens his mouth, sees ${S.memo} already attached to everything, and closes it again. "Well. Great. That's... great."`, choices:[{label:'Smile politely', fx(){ apply('He wanders off, deflated.',{std:10,san:5}); }}]};
-      return {title:`Did you get the memo?`, text:S.memoText, choices:[
-        {label:`"Yeah. I got the memo."`, fx(){ apply(`He nods slowly and walks away. You will receive this memo four more times today.`,{std:-8,san:-8}); learn('memo'); }},
-        {label:`Apologize profusely`, fx(){ apply(`You apologize three times. He says "no worries" twice. Everyone loses.`,{std:-3,san:-12}); learn('memo'); }} ]};
+      if(f.cover) return {title:`${S.bossShort} stops by`, text:`${S.bossShort} opens his mouth, sees ${S.memo} already attached to everything, and closes it again. "Well. Super. That's... super."`, choices:[{label:'Smile politely', fx(){ apply('He wanders off, deflated.',{std:10,san:5}); }}]};
+      return {title:'Did you get the memo?', text:S.memoText, choices:[
+        {label:'"Yeah. I got the memo."', fx(){ apply(`He nods slowly and walks away. You will receive this memo four more times today.`,{std:-8,san:-8}); learn('memo'); }},
+        {label:'Apologize profusely', fx(){ apply(`You apologize three times. He says "no worries" twice. Everyone loses.`,{std:-3,san:-12}); learn('memo'); }} ]};
     }},
-    {id:'consult', time:11*60, ev(){
-      learn('consult');
-      const ready = f.zoned>=2 && r.san>=50;
-      return {title:'The Consultants', text:`You're pulled into a conference room with ${S.consultants}. They both have the same haircut. "Walk us through a typical day. What is it, specifically, that you contribute?"`, choices:[
-        {label:'Give the polished answer', fx(){ apply(`You say "cross-functional" three times. They nod and write nothing down.`,{std:5,san:-5}); }},
-        {label:'Tell them the truth', fx(){
-          if(ready){ f.promo=true; apply(`You lean back. "Honestly? I spend most of the day looking busy. Nobody has noticed in years. The incentive structure is broken." They glance at each other and start writing furiously.`,{std:15,san:10}); }
-          else apply(`You try to be honest, but it comes out as a nervous rant. They exchange a look. One of them writes something down and underlines it twice.`,{std:-12,san:-5},'bad'); }} ]};
-    }},
-    {id:'cake', time:12*60, ev(){
-      learn('cake');
-      const ch=[{label:'Grab a slice', fx(){ apply(`It's grocery store sheet cake. The frosting is a color not found in nature. It's perfect.`,{san:8,std:3}); }}];
-      if(!K.gerald) ch.push({label:'Who is that guy in the corner?', fx(){ learn('gerald'); apply(`Someone shrugs. "That's Gerald. Records. He's been here since before the building." The cake runs out right before it gets to him. He doesn't seem surprised.`,{}); }});
-      else ch.push({label:'Give your slice to Gerald', fx(){ f.geraldFriend=true; apply(`You walk your plate to the corner and hand it to Gerald. He stares at it for a long time. "Thank you," he says quietly. "Nobody has ever done that."`,{std:2,san:6}); }});
-      ch.push({label:'Skip it and keep working', fx(){ apply(`You stay at your desk. You can hear them singing.`,{out:4,san:-4}); }});
-      return {title:'Cake in the break room', text:`An email goes out: cake in the break room for ${S.cakeFor}. A crowd forms instantly.`, choices:ch};
-    }},
-    {id:'visitor', time:13*60+30, ev(){
-      learn('visitor');
-      const ch=[];
-      if(f.geraldFile) ch.push({label:`Hand over ${S.visitorFix}`, special:true, fx(){ f.helped=true; r.t+=20; apply(S.visitorWin,{std:12,san:15,out:5}); }});
-      else ch.push({label:'Try to help', fx(){ r.t+=45; apply(`You dig for forty-five minutes. The missing piece is ${S.visitorFix}, and it's buried somewhere in Records. You can't find it.`,{san:-8}); }});
-      ch.push({label:'Send them to another department', fx(){ apply(`"That's actually handled on another floor." It is not handled on another floor.`,{std:-4,san:-3}); }});
-      return {title:`${S.visitor} needs help`, text:S.visitorIntro, choices:ch};
-    }},
+    {id:'consultCall', time:11*60, ev(){ toast(`📅 Calendar alert: meeting with the consultants, CONFERENCE ROOM, now. Don't be late.`); return null; }},
+    {id:'consultMiss', time:11*60+20, ev(){ if(f.consultDone) return null; f.consultDone=true; learn('consult');
+      return {title:'No-show', text:`The consultants waited twenty minutes in the conference room. You never came. They write your name down and underline it twice.`, choices:[{label:'Uh oh', fx(){ apply(`That's going in a report somewhere.`,{std:-15,san:-5}); }}]}; }},
+    {id:'cakeCall', time:12*60, ev(){ learn('cake'); toast(`📧 "Cake in the break room!!" (12:00 to 12:30)`); return null; }},
+    {id:'visitorCall', time:13*60+30, ev(){ toast(`🛎️ Someone's waiting at the front counter.`); return null; }},
     {id:'meeting', time:14*60, ev(){
       if(f.warden) return {title:'Fire warden duties', text:`While everyone files into the ${S.meeting}, you're "inspecting extinguishers" in a quiet stairwell. At 2:15 the alarm goes off. You calmly lead everyone outside like a hero.`, choices:[{label:'Bask in it', fx(){ r.t+=15; apply('Several people thank you. You did nothing.',{std:8,san:8}); }}]};
-      return {title:`The ${S.meeting}`, text:`Attendance is mandatory. Slide 1 of 64 is the agenda. At 2:15, someone in the break room burns popcorn and the fire alarm goes off. You stand in the parking lot for half an hour.`, choices:[{label:'Endure it', fx(){ r.t+=45; apply('Forty-five minutes of your life, gone.',{san:-12}); learn('fire'); }}]};
+      return {title:`The ${S.meeting}`, text:`Attendance is mandatory. Slide 1 of 64 is the agenda. At 2:15, someone in the break room burns popcorn and the fire alarm goes off. You stand in the parking lot for half an hour.`, choices:[{label:'Endure it', fx(){ r.t+=45; Object.assign(player,{x:16.5,y:21.2}); f.graceUntil=r.t+5; apply('Forty-five minutes of your life, gone. You shuffle back in through the lobby.',{san:-12}); learn('fire'); }}]};
     }},
     {id:'saturday', time:16*60+30, ev(){
       learn('saturday');
-      const ch=[];
-      if(f.knewSat) ch.push({label:'You are already gone', special:true, fx(){ apply(`You knew this was coming, so you're "in the restroom" when ${S.bossShort} drifts by. He leaves a sticky note. You throw it away.`,{san:8}); }});
-      ch.push({label:`"Sure. I'll be here."`, fx(){ apply(`"Great. And Sunday too, probably." You feel something inside you die a little.`,{std:10,san:-20},'bad'); }});
-      ch.push({label:`"Yeah... I'm not gonna be here."`, fx(){ apply(`He blinks. Nobody has ever said that to him. "Mmkay," he says, very uncertainly.`,{std:-12,san:12}); }});
-      return {title:'One more thing...', text:S.satText, choices:ch};
+      if(inR(player,...REG.stair)) return {title:'Already gone', text:`Somewhere above you, ${S.bossShort} is walking cubicle to cubicle asking for you. He never checks the stairwell.`, choices:[{label:'Wait it out', fx(){ apply(`Ten minutes later you hear him give up. He leaves a sticky note on your monitor. You'll throw it away.`,{san:8}); }}]};
+      return {title:'One more thing...', text:S.satText, choices:[
+        {label:'"Sure. I\'ll be here."', fx(){ apply(`"Super. And Sunday too, probably." Something inside you dies a little.`,{std:10,san:-20}); }},
+        {label:'"Yeah... I\'m not gonna be here."', fx(){ apply(`He blinks. Nobody has ever said that to him. "Mmkay," he says, very uncertainly.`,{std:-12,san:12}); }} ]};
     }},
-  ];
-  // set knewSat lazily
-  f.knewSat = !!K.saturday;
-  // randoms
-  for(const rd of r.randoms) list.push({id:'r_'+rd.k, time:rd.time, ev:()=>randomEvent(rd.k)});
-  return list.sort((a,b)=>a.time-b.time);
+    ...r.randoms.map(rd=>({id:'r_'+rd.k, time:rd.time, ev:()=>randomEvent(rd.k)})),
+  ].sort((a,b)=>a.time-b.time);
 }
 
+function consultEvent(){
+  const r=run, f=r.f; f.consultDone=true; learn('consult');
+  const ready = f.zoned>=2 && r.san>=60 && r.std>=50;
+  return {title:'The Consultants', text:`${cap(S.consultants)} sit across the table. They have the same haircut. "Walk us through a typical day. What is it, specifically, that you contribute?"`, choices:[
+    {label:'Give the polished answer', fx(){ apply(`You say "cross-functional" three times. They nod and write nothing down.`,{std:5,san:-5}); }},
+    {label:'Tell them the truth', fx(){
+      if(ready){ f.promo=true; apply(`You lean back. "Honestly? I spend most of the day looking busy. Nobody has noticed in years. The incentives are broken." They glance at each other and start writing furiously.`,{std:15,san:10}); }
+      else apply(`You try to be honest, but it comes out as a nervous rant. They exchange a look. One of them writes something down and underlines it twice.`,{std:-12,san:-5}); }} ]};
+}
+function cakeEvent(){
+  const f=run.f, K=meta.know; f.cakeDone=true;
+  const ch=[{label:'Grab a slice', fx(){ apply(`Grocery store sheet cake. The frosting is a color not found in nature. Perfect.`,{san:8,std:3}); }}];
+  if(!K.gerald) ch.push({label:'Who is that guy in the corner?', fx(){ learn('gerald'); apply(`Someone shrugs. "That's Gerald. Records. He's been here longer than the building." The cake runs out right before it gets to him. He doesn't seem surprised.`,{}); }});
+  else ch.push({label:'Give your slice to Gerald', fx(){ f.geraldFriend=true; apply(`You walk your plate to the corner and hand it to Gerald. He stares at it a long time. "Thank you," he says quietly. "Nobody has ever done that."`,{std:2,san:6}); }});
+  return {title:'Cake in the break room', text:`Cake for ${S.cakeFor}. A crowd has formed. In the corner, a quiet man in a cardigan waits his turn.`, choices:ch};
+}
+function visitorEvent(){
+  const f=run.f; learn('visitor');
+  const ch=[];
+  if(f.geraldFile) ch.push({label:`Hand over ${S.visitorFix}`, special:true, fx(){ f.helped=true; f.visitorDone=true; run.t+=20; apply(S.visitorWin,{std:12,san:15,out:5}); }});
+  else ch.push({label:'Try to help', fx(){ run.t+=40; apply(`You dig for forty minutes. The missing piece is ${S.visitorFix}, buried somewhere in Records. You can't find it.`,{san:-8}); }});
+  ch.push({label:'Send them to another department', fx(){ f.visitorDone=true; apply(`"That's actually handled on another floor." It is not handled on another floor.`,{std:-4,san:-3}); }});
+  return {title:`${S.visitor} needs help`, text:S.visitorIntro, choices:ch};
+}
 function randomEvent(k){
   const r=run, f=r.f;
-  const E={
+  return ({
     outage:{title:'The network is down', text:'IT sends an email, which nobody receives, announcing that email is down for the next hour.', choices:[{label:'Shrug', fx(){ f.outageUntil=r.t+60; apply('No inbox for an hour. Is this freedom?',{san:5}); }}]},
-    survey:{title:'Mandatory morale survey', text:'HR wants to know how engaged you feel on a scale of 1 to 10. It is not anonymous. It says it is anonymous.', choices:[
+    survey:{title:'Mandatory morale survey', text:'HR wants to know how engaged you feel on a scale of 1 to 10. It says it is anonymous. It is not anonymous.', choices:[
       {label:'Answer honestly', fx(){ apply('You give it a 3. Somewhere, a dashboard turns yellow.',{std:-3,san:6}); }},
-      {label:'Put 10s across the board', fx(){ apply('You lie to a form. It somehow feels worse than lying to a person.',{std:3,san:-5}); }} ]},
-    fax:{title:'The fax machine is screaming', text:`The fax machine near your desk starts making a sound like a dial-up modem being strangled. Nobody moves.`, choices:[
+      {label:'Put 10s across the board', fx(){ apply('You lie to a form. Somehow it feels worse than lying to a person.',{std:3,san:-5}); }} ]},
+    fax:{title:'The fax machine is screaming', text:'The fax machine starts making a sound like a dial-up modem being strangled. Nobody moves.', choices:[
       {label:'Unplug it', fx(){ apply('Blessed silence. Three people silently mouth "thank you."',{std:4}); }},
       {label:'Put on headphones', fx(){ apply('It screams for forty more minutes.',{san:-6}); }} ]},
-    donuts:{title:'Leftover donuts', text:'Someone left a box of donuts from a meeting you weren\'t invited to.', choices:[{label:'Take two', fx(){ apply('Glazed. Still a little warm. Today is not all bad.',{san:9}); }}]},
-    dee:{title:`${S.coworker} needs to vent`, text:`Dee drops into the chair by your desk. "${S.bossShort} just asked me to redo a report he never read. Do you have five minutes?"`, choices:[
+    donuts:{title:'Leftover donuts', text:"Someone left a box of donuts from a meeting you weren't invited to.", choices:[{label:'Take two', fx(){ apply('Glazed. Still a little warm. Today is not all bad.',{san:9}); }}]},
+    dee:{title:`${S.coworker} needs to vent`, text:`Dee finds you. "${S.bossShort} just asked me to redo a report he never read. Do you have five minutes?"`, choices:[
       {label:'Listen', fx(){ f.vent++; r.t+=15; apply('You listen. She feels better. So do you, oddly.',{std:6,san:3}); learn('dee'); }},
       {label:'Pretend to be on a call', fx(){ apply('You hold your phone to your ear and say "uh huh" to nobody.',{std:-3}); }} ]},
-    parking:{title:'Bad news from the parking lot', text:'A coworker pokes their head in. "Hey, is the silver sedan yours? Somebody backed into it and drove off."', choices:[{label:'Sigh deeply', fx(){ apply('Of course they did.',{san:-10},'bad'); }}]},
-  };
-  return E[k];
+    parking:{title:'Bad news from the parking lot', text:'A coworker pokes their head in. "Is the silver sedan yours? Somebody backed into it and drove off."', choices:[{label:'Sigh deeply', fx(){ apply('Of course they did.',{san:-10}); }}]},
+  })[k];
 }
 
-function advance(){
-  if(run.done) return render();
-  if(run.san<=0) return endLoop(`Something snaps. You find yourself standing on your desk, explaining the concept of time to the copy room. Security is very gentle about it.`, 'Sanity hit zero.');
-  if(run.std<=0) return endLoop(`HR calls you in. There's a box on the table with your stuff already in it, including a stapler that isn't yours.`, 'Standing hit zero. You were let go.');
-  const evs = events();
-  for(const e of evs){
-    if(!run.fired[e.id] && run.t>=e.time && e.time<END){
-      run.fired[e.id]=true;
-      modal = e.ev();
-      return render();
-    }
+function spottedEvent(){
+  const f=run.f; learn('boss');
+  const back=()=>{ Object.assign(player,{x:11.5,y:10.4}); f.graceUntil=run.t+8; };
+  if(player.carry==='printer'){
+    player.carry=null;
+    return {title:`"Whoa, whoa, whoa."`, text:`${S.bossShort} steps in front of you. "Where are we going with ${S.printer}? That's a leased machine, mmkay?" He makes you carry it back, then explains the lease terms for half an hour.`, choices:[{label:'Put it back', fx(){ run.t+=30; back(); apply(`It's back in the copy room. Its little orange light blinks at you, victorious.`,{std:-15,san:-10}); }}]};
   }
-  if(run.t>=END) return review();
-  render();
+  if(player.carry==='box'){
+    player.carry=null;
+    return {title:`"What's in the box?"`, text:`${S.bossShort} peers into your box. "Ohhh, are we redecorating? Let's keep personal items at our desk, mmkay?" He walks you back and watches you unpack it, item by item.`, choices:[{label:'Unpack it', fx(){ run.t+=20; back(); apply(`The photo goes back on the desk. Not today, apparently.`,{std:-8,san:-10}); }}]};
+  }
+  const line=COVER_TALK[Math.floor(Math.random()*COVER_TALK.length)](S);
+  return {title:`${S.bossShort} spotted you`, text:line, choices:[{label:'Nod. Keep nodding.', fx(){
+    run.t+=20; back(); apply(`Twenty minutes later, he walks you all the way back to your cubicle. "Great talk."`,{san:-6,std:-2}); }}]};
 }
 
-function choose(c){
-  modal=null;
-  c.fx();
-  save();
-  if(run.done) return render();
-  advance();
+// ---------- Event flow ----------
+function presentModal(){
+  if(!modal) return;
+  const m=modal;
+  showModal(`<span class="stamp">${fmt(run.t)}</span><h2>${esc(m.title)}</h2><p>${esc(m.text)}</p>
+    ${m.choices.map((c,i)=>`<button class="btn ${c.special?'special':''}" data-i="${i}">${esc(c.label)}</button>`).join('')}`, '', i=>{
+      closeModal(); modal=null; m.choices[+i].fx(); save(); afterChange();
+    });
+}
+function afterChange(){
+  renderHud();
+  if(run.done) return;
+  if(run.san<=0) return endLoop(`Something snaps. You find yourself standing on your desk, explaining the concept of time to the copy room. Security is very gentle about it.`, 'Sanity hit zero.');
+  if(run.std<=0) return endLoop(`HR calls you in. There's a box on the table with your stuff already in it.`, 'Standing hit zero. You were let go.');
+  if(modal) presentModal();
+}
+function checkTriggers(){
+  const r=run, f=r.f;
+  for(const e of scheduled()){
+    if(!r.fired[e.id] && r.t>=e.time){ r.fired[e.id]=true; const m=e.ev(); if(m){ modal=m; presentModal(); return true; } }
+  }
+  if(!f.consultDone && r.t>=11*60 && r.t<11*60+20 && inR(player,...REG.conf)){ modal=consultEvent(); presentModal(); return true; }
+  if(!f.cakeDone && r.t>=12*60 && r.t<12*60+30 && inR(player,...REG.brk)){ modal=cakeEvent(); presentModal(); return true; }
+  if(r.t>=END){ review(); return true; }
+  return false;
 }
 
 // ---------- Review & endings ----------
@@ -363,129 +481,326 @@ function review(){
   const r=run, f=r.f;
   if(f.promo) return ending('promotion');
   if(f.helped && f.geraldFriend && r.out>=100 && r.std>=40) return ending('goodday');
-  meta.best=Math.max(meta.best, r.out); save();
-  if(r.out>=100 && r.std>=40)
-    return endLoop(`Your ${S.review} goes fine. "Meets expectations." ${S.bossShort} gives you a thumbs-up without looking up from his phone. You drive home, eat dinner, and go to bed early.`, 'You passed. It didn\'t matter.');
-  endLoop(`Your ${S.review} lasts four minutes. ${S.bossShort} reads the words "needs improvement" directly off the form, twice.`, r.out<100?`Output was ${r.out}/100.`:`Standing was ${r.std}/40.`);
+  if(r.out>=100 && r.std>=40) return endLoop(`Your ${S.review} goes fine. "Meets expectations." ${S.bossShort} gives you a thumbs-up without looking up from his phone. You drive home, eat dinner, and go to bed early.`, `You passed. It didn't matter.`);
+  endLoop(`Your ${S.review} lasts four minutes. ${S.bossShort} reads "needs improvement" directly off the form, twice.`, r.out<100?`Output was ${r.out}/100.`:`Standing was ${r.std}/40.`);
 }
-
-function endLoop(text, reason){
-  run.done={type:'loop', text, reason}; save(); render();
-}
+function endLoop(text, reason){ run.done={type:'loop',text,reason}; save(); doneScreen(); }
 function ending(k){
-  const fresh = !meta.endings[k];
-  meta.endings[k]=meta.loops; save();
+  const fresh=!meta.endings[k]; meta.endings[k]=meta.loops; save();
   const txt={
-    promotion:`On Tuesday (it's Tuesday!) the consultants' report comes out. It recommends eliminating half the department and promoting you, because you are "clearly management material." Your new office has a window. You still don't do much. Nobody notices.`,
-    field:`At 3:30 PM you, Dee, and Gerald carry ${S.printer} out a side door and across the street to an empty lot. Somebody has a softball bat. Somebody has a song playing on their phone. Nobody says a word. It takes a long time, and it is beautiful. When you wake up the next morning, the radio says it's Tuesday.`,
+    promotion:`On Tuesday (it's Tuesday!) the consultants' report comes out. It recommends cutting half the department and promoting you, because you are "clearly management material." Your new office has a window. You still don't do much. Nobody notices.`,
+    field:`You, Dee, and Gerald carry ${S.printer} out the front door and across the street to an empty lot. Gerald hands you the bat. Somebody has a song playing on their phone. Nobody says a word. It takes a long time, and it is beautiful. When you wake up the next morning, the radio says it's Tuesday.`,
     goodday:`You didn't game the day this time. You spent it on other people: a slice of cake for Gerald, an afternoon for ${S.visitor}, and the work done well because it was worth doing well. ${S.bossShort} says "meets expectations." It does. When you wake up the next morning, the radio says it's Tuesday.`,
     decks:S.decks+` When you wake up the next morning, the radio says it's Tuesday.`,
   }[k];
-  run.done={type:'ending', k, text:txt, fresh}; render();
+  run.done={type:'ending',k,text:txt,fresh}; doneScreen();
 }
 
-// ---------- Rendering ----------
-const app=document.getElementById('app');
-function h(html){ app.innerHTML=html; }
-function esc(s){ return String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+// ============================================================
+//  UPDATE LOOP
+// ============================================================
+const keys={};
+function isPaused(){ return !run || run.done || modal || menuOpen || paused || journalOpen; }
+let stepAcc=0;
+function update(dt){
+  const r=run;
+  let dx=0, dy=0;
+  if(keys.left) dx-=1; if(keys.right) dx+=1; if(keys.up) dy-=1; if(keys.down) dy+=1;
+  if(dx||dy){
+    const l=Math.hypot(dx,dy); dx/=l; dy/=l;
+    let sp = player.carry==='printer'?2.0:(hasHabit('sneak')?4.6:3.8);
+    if(player.carry==='box') sp*=0.9;
+    moveP(dx*sp*dt, 0); moveP(0, dy*sp*dt);
+    stepAcc+=dt; if(stepAcc>3){ stepAcc=0; meta.habits.sneak++; }
+  }
+  r.t += dt*MIN_PER_SEC;
+  updateBoss(dt);
+  if(modal) return;
+  if(checkTriggers()) return;
+  const o=nearest();
+  document.getElementById('prompt').innerHTML = o ? `ACT: <b>${esc(o.name)}</b>` : `<span style="opacity:.7">${esc(regionName(player))}${player.carry?` · carrying ${player.carry==='box'?'a box':S.printerShort}`:''}</span>`;
+  renderHud();
+}
+function moveP(dx,dy){
+  const rad=0.3, nx=player.x+dx, ny=player.y+dy;
+  const pts=[[nx-rad,ny-rad],[nx+rad,ny-rad],[nx-rad,ny+rad],[nx+rad,ny+rad]];
+  if(pts.some(([x,y])=>blocking(Math.floor(x),Math.floor(y)))) return;
+  player.x=nx; player.y=ny;
+}
+function angDiff(a,b){ let d=a-b; while(d>Math.PI) d-=2*Math.PI; while(d<-Math.PI) d+=2*Math.PI; return d; }
+function los(x0,y0,x1,y1){
+  const n=Math.ceil(Math.hypot(x1-x0,y1-y0)*5);
+  for(let i=1;i<n;i++){ const x=x0+(x1-x0)*i/n, y=y0+(y1-y0)*i/n; if(grid[Math.floor(y)][Math.floor(x)]===1) return false; }
+  return true;
+}
+function bossSees(px,py){
+  const dx=px-boss.x, dy=py-boss.y, d=Math.hypot(dx,dy);
+  if(d>VIEW_R) return false;
+  if(d>0.7 && Math.abs(angDiff(Math.atan2(dy,dx),boss.ang))>VIEW_HALF) return false;
+  return los(boss.x,boss.y,px,py);
+}
+function playerExposed(){
+  const t=run.t, f=run.f;
+  if(player.carry) return true;
+  if(inR(player,...REG.cube)) return false;
+  if(t<f.graceUntil) return false;
+  if(t>=11*60 && t<11*60+20 && inR(player,...REG.conf)) return false;
+  return true;
+}
+function updateBoss(dt){
+  if(boss.chase){
+    const dx=player.x-boss.x, dy=player.y-boss.y, d=Math.hypot(dx,dy);
+    boss.ang=Math.atan2(dy,dx);
+    boss.alert-=dt;
+    if(boss.alert<=0 && d>1.0){ boss.x+=dx/d*4.5*dt; boss.y+=dy/d*4.5*dt; }
+    if(boss.alert<=0 && (d<=1.0 || boss.alert<-2.5)){ boss.chase=false; modal=spottedEvent(); presentModal(); }
+    return;
+  }
+  const [tx,ty,pause]=BOSS_PATH[boss.wp];
+  const dx=tx-boss.x, dy=ty-boss.y, d=Math.hypot(dx,dy);
+  if(boss.wait>0){
+    boss.wait-=dt; boss.look+=dt;
+    boss.ang = boss.baseAng + Math.sin(boss.look*1.8)*1.2;   // castle-guard head turn
+    if(boss.wait<=0) boss.wp=(boss.wp+1)%BOSS_PATH.length;
+  } else if(d<0.08){
+    boss.x=tx; boss.y=ty; boss.wait=pause; boss.look=0; boss.baseAng=boss.ang;
+    if(!pause) boss.wp=(boss.wp+1)%BOSS_PATH.length;
+  } else {
+    const want=Math.atan2(dy,dx);
+    boss.ang += angDiff(want,boss.ang)*Math.min(1,dt*8);
+    const sp=2.3*dt; boss.x+=dx/d*Math.min(sp,d); boss.y+=dy/d*Math.min(sp,d);
+  }
+  if(playerExposed() && bossSees(player.x,player.y)){
+    boss.chase=true; boss.alert=0.7; toast(`❗ ${S.bossShort} spotted you!`, true);
+  }
+}
 
+// ============================================================
+//  RENDER
+// ============================================================
+const cv=document.getElementById('cv'), ctx=cv.getContext('2d');
+let TS=32, VW=0, VH=0, DPR=1;
+function sizeCanvas(){
+  const w=cv.parentElement.clientWidth || 360;
+  const h=Math.round(Math.min(w*0.82, window.innerHeight*0.5));
+  DPR=window.devicePixelRatio||1;
+  cv.width=w*DPR; cv.height=h*DPR; cv.style.height=h+'px';
+  VW=w; VH=h; TS=Math.max(26, Math.min(40, Math.floor(w/13)));
+}
+window.addEventListener('resize', ()=>{ if(run) sizeCanvas(); });
+
+function floorColor(x,y){
+  const p={x:x+.5,y:y+.5};
+  if(inR(p,...REG.boss)) return (x+y)%2?'#8a6a4a':'#86664a';
+  if(inR(p,...REG.conf)) return (x+y)%2?'#6f7c88':'#6b7884';
+  if(inR(p,...REG.brk)) return (x+y)%2?'#e8e4da':'#c9c4b8';
+  if(inR(p,...REG.copy)) return '#b3ada0';
+  if(inR(p,...REG.rec)) return (x+y)%2?'#8f8d86':'#8a8881';
+  if(inR(p,...REG.stair)) return '#9a978e';
+  if(inR(p,...REG.lobby)) return (x+y)%2?'#d8d2c2':'#cfc8b6';
+  return (x*7+y*3)%5===0?'#a59f88':'#aaa48d';
+}
+function draw(now){
+  ctx.setTransform(DPR,0,0,DPR,0,0);
+  ctx.fillStyle='#222'; ctx.fillRect(0,0,VW,VH);
+  const camX=Math.max(0,Math.min(W*TS-VW, player.x*TS-VW/2));
+  const camY=Math.max(0,Math.min(H*TS-VH, player.y*TS-VH/2));
+  ctx.save(); ctx.translate(-Math.round(camX),-Math.round(camY));
+  const T=TS;
+  const x0=Math.max(0,Math.floor(camX/T)), y0=Math.max(0,Math.floor(camY/T)), x1=Math.min(W-1,x0+Math.ceil(VW/T)+1), y1=Math.min(H-1,y0+Math.ceil(VH/T)+1);
+  const emoji=(e,x,y,s=0.7)=>{ ctx.font=`${T*s}px sans-serif`; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText(e,x*T,y*T); };
+  for(let y=y0;y<=y1;y++) for(let x=x0;x<=x1;x++){
+    const v=grid[y][x], X=x*T, Y=y*T;
+    if(v===1){ ctx.fillStyle='#4a4740'; ctx.fillRect(X,Y,T,T); ctx.fillStyle='#5d594f'; ctx.fillRect(X,Y,T,T*0.25); continue; }
+    ctx.fillStyle=floorColor(x,y); ctx.fillRect(X,Y,T,T);
+    if(v===2){ ctx.fillStyle='#7b8794'; ctx.fillRect(X+2,Y+2,T-4,T-4); ctx.fillStyle='#93a0ad'; ctx.fillRect(X+2,Y+2,T-4,4); }
+    if(v===3){ ctx.fillStyle='#7a5a3a'; ctx.fillRect(X,Y+T*0.2,T,T*0.6); ctx.fillStyle='#93704c'; ctx.fillRect(X,Y+T*0.2,T,4); }
+    if(v===4){ ctx.fillStyle='#3f6d5a'; ctx.fillRect(X+2,Y,T-4,T); emoji('🚪',x+.5,y+.5,.55); }
+  }
+  const rect=(x,y,w,h,c)=>{ ctx.fillStyle=c; ctx.fillRect(x*T,y*T,w*T,h*T); };
+  const label=(t,x,y,c='#fff')=>{ ctx.font=`bold ${Math.max(9,T*0.3)}px 'Courier New',monospace`; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.lineWidth=3; ctx.strokeStyle='rgba(0,0,0,.65)'; ctx.strokeText(t,x*T,y*T); ctx.fillStyle=c; ctx.fillText(t,x*T,y*T); };
+  rect(2,2,4,1.2,'#5a3e28'); emoji('🖥️',3,2.5,.55);                     // boss desk
+  rect(10.5,2,6,2.2,'#4b3a2c');                                           // conference table
+  rect(21,2.5,3,1.4,'#c2b49a');                                           // break table
+  if(run.t>=12*60 && run.t<12*60+30 && !run.f.cakeDone) emoji('🎂',22.5,3.2,.75);
+  emoji('☕',25.5,1.5,.8); emoji('🖨️',31.5,1.6,.95); emoji('🥤',33.5,7.4,.8); emoji('📌',21.5,6.5,.6);
+  rect(29,14,1,8,'#6d5a40'); rect(31,14,1,3,'#6d5a40'); rect(33,19,1,3,'#6d5a40');
+  emoji('📦',29.5,15,.55); emoji('📦',29.5,18,.55); emoji('📦',33.5,20,.55);
+  emoji('🪴',6.5,20.5,.8); emoji('🪴',25.5,21.5,.8);
+  for(let i=0;i<4;i++) rect(1,19.4+i,4,.12,'#7d7a72');
+  for(const cy of [8,13]) for(const cx of [2,6,10,14,18,22]){ rect(cx+1,cy+1,1,.55,'#8b6b4b'); emoji('🖥️',cx+1.5,cy+1.25,.45); }
+  emoji('🖼️',11.85,9.1,.35);
+  for(const [x,y,c] of [[3.5,9.7,'#7a9a6a'],[15.5,9.7,'#a37a9a'],[23.5,9.7,'#7a8aa3'],[3.5,14.7,'#a3907a'],[11.5,14.7,'#6aa39a'],[23.5,14.7,'#9a6a6a']]) person(x,y,c,'#e0bd98');
+  const npc=(x,y,body,name,c)=>{ person(x,y,body,'#e9c9a6'); if(name) label(name,x,y-0.75,c); };
+  npc(19.5,14.7,'#c86f4a','Dee');
+  npc(33.2,17.6,'#7d7356','Gerald');
+  if(run.t>=11*60 && run.t<11*60+20 && !run.f.consultDone){ npc(12,2.9,'#333','Consultants','#ffd'); npc(15,2.9,'#333',''); }
+  if(visitorHere()) npc(15.5,20.6,'#5b7fb0',S.visitor.split(' ')[0],'#ffd');
+  const o=nearest();
+  if(o){ const pulse=0.5+0.5*Math.sin(now/180); ctx.strokeStyle=`rgba(185,138,42,${0.5+pulse*0.5})`; ctx.lineWidth=3; ctx.beginPath(); ctx.arc(o.x*T,o.y*T,T*0.6,0,Math.PI*2); ctx.stroke(); }
+  // boss vision cone (walls cut it off)
+  ctx.beginPath(); ctx.moveTo(boss.x*T,boss.y*T);
+  for(let i=0;i<=24;i++){
+    const a=boss.ang-VIEW_HALF+2*VIEW_HALF*i/24;
+    let d=0; while(d<VIEW_R){ d+=0.1; const x=boss.x+Math.cos(a)*d, y=boss.y+Math.sin(a)*d; if(grid[Math.floor(y)]?.[Math.floor(x)]===1) break; }
+    ctx.lineTo((boss.x+Math.cos(a)*d)*T,(boss.y+Math.sin(a)*d)*T);
+  }
+  ctx.closePath();
+  ctx.fillStyle = boss.chase?'rgba(230,70,50,.38)':'rgba(255,230,110,.30)'; ctx.fill();
+  person(boss.x,boss.y,'#3c4f7a','#f0cfae',true);
+  label(S.bossShort,boss.x,boss.y-0.8,'#ffe9a0');
+  if(boss.chase){ ctx.font=`bold ${T*0.9}px sans-serif`; ctx.fillStyle='#e8402a'; ctx.textAlign='center'; ctx.fillText('!',boss.x*T,(boss.y-1.35)*T); }
+  person(player.x,player.y,'#2f5d50','#f2d0b0',false,true);
+  label('You',player.x,player.y+0.62,'#cfe8d8');
+  if(player.carry==='box') emoji('📦',player.x+0.05,player.y-0.6,.55);
+  if(player.carry==='printer') emoji('🖨️',player.x,player.y-0.65,.75);
+  ctx.restore();
+  if(Math.random()<0.004){ ctx.fillStyle='rgba(255,255,230,.08)'; ctx.fillRect(0,0,VW,VH); }
+}
+function person(x,y,body,skin,isBoss,isPlayer){
+  const T=TS;
+  ctx.fillStyle='rgba(0,0,0,.2)'; ctx.beginPath(); ctx.ellipse(x*T,(y+0.28)*T,T*0.3,T*0.12,0,0,Math.PI*2); ctx.fill();
+  ctx.fillStyle=body; ctx.beginPath(); ctx.arc(x*T,y*T,T*0.3,0,Math.PI*2); ctx.fill();
+  if(isPlayer){ ctx.fillStyle='#b8392a'; ctx.fillRect(x*T-2,y*T-T*0.05,4,T*0.28); }
+  if(isBoss){ ctx.strokeStyle='#c9a227'; ctx.lineWidth=2; ctx.beginPath(); ctx.moveTo(x*T-T*0.15,y*T-T*0.25); ctx.lineTo(x*T-T*0.15,y*T+T*0.25); ctx.moveTo(x*T+T*0.15,y*T-T*0.25); ctx.lineTo(x*T+T*0.15,y*T+T*0.25); ctx.stroke(); }
+  ctx.fillStyle=skin; ctx.beginPath(); ctx.arc(x*T,(y-0.22)*T,T*0.17,0,Math.PI*2); ctx.fill();
+  if(isBoss){ ctx.fillStyle='#ddd'; ctx.fillRect(x*T+T*0.22,y*T-T*0.05,T*0.14,T*0.16); }
+}
+
+function renderHud(){
+  if(!run) return;
+  document.getElementById('clock').textContent=fmt(Math.min(run.t,END));
+  document.getElementById('loopno').innerHTML=`LOOP #${meta.loops}<br>${esc(S.org)}`;
+  const m=(k,v)=>`<div class="meter"><label><span>${k}</span><span>${v}</span></label><div class="bar ${v<25?'low':''}"><i style="width:${v}%"></i></div></div>`;
+  document.getElementById('meters').innerHTML=m('Output',run.out)+m('Standing',run.std)+m('Sanity',run.san);
+}
+
+let last=performance.now();
+function frame(now){
+  const dt=Math.min(0.05,(now-last)/1000); last=now;
+  if(toastT>0){ toastT-=dt; if(toastT<=0) document.getElementById('toast').className='toast'; }
+  if(run && !isPaused()) update(dt);
+  if(run && !run.done) draw(now);
+  requestAnimationFrame(frame);
+}
+requestAnimationFrame(frame);
+
+// ============================================================
+//  INPUT
+// ============================================================
+const KEYMAP={ArrowUp:'up',KeyW:'up',ArrowDown:'down',KeyS:'down',ArrowLeft:'left',KeyA:'left',ArrowRight:'right',KeyD:'right'};
+window.addEventListener('keydown',e=>{
+  if(KEYMAP[e.code]){ keys[KEYMAP[e.code]]=true; if(run&&!run.done) e.preventDefault(); }
+  if(!run||run.done) return;
+  if((e.code==='KeyE'||e.code==='Space'||e.code==='Enter') && !isPaused()){ e.preventDefault(); tryAct(); }
+  if(e.code==='KeyJ') toggleJournal();
+  if(e.code==='KeyP') togglePause();
+});
+window.addEventListener('keyup',e=>{ if(KEYMAP[e.code]) keys[KEYMAP[e.code]]=false; });
+window.addEventListener('blur',()=>{ for(const k in keys) keys[k]=false; });
+document.querySelectorAll('.dpad button').forEach(b=>{
+  const d=b.dataset.d;
+  const on=e=>{ e.preventDefault(); keys[d]=true; b.classList.add('on'); };
+  const off=()=>{ keys[d]=false; b.classList.remove('on'); };
+  b.addEventListener('pointerdown',on); b.addEventListener('pointerup',off); b.addEventListener('pointerleave',off); b.addEventListener('pointercancel',off);
+  b.addEventListener('contextmenu',e=>e.preventDefault());
+});
+document.getElementById('act').addEventListener('click',()=>{ if(!isPaused()) tryAct(); });
+document.getElementById('jbtn').addEventListener('click',toggleJournal);
+document.getElementById('pbtn').addEventListener('click',togglePause);
+function tryAct(){ const o=nearest(); if(o) openMenu(o); else toast(`Nothing to do here. Walk up to something.`); }
+
+// ============================================================
+//  SCREENS & MODALS
+// ============================================================
+function show(which){ document.getElementById('screen').classList.toggle('hidden',which!=='screen'); document.getElementById('game').classList.toggle('hidden',which!=='game'); }
+function showModal(inner, cls, onPick){
+  for(const k in keys) keys[k]=false;
+  document.querySelectorAll('.dpad button').forEach(b=>b.classList.remove('on'));
+  const root=document.getElementById('modalRoot');
+  root.innerHTML=`<div class="modal"><div class="card ${cls}">${inner}</div></div>`;
+  root.querySelectorAll('[data-i]').forEach(b=>b.addEventListener('click',()=>onPick(b.dataset.i)));
+}
+function closeModal(){ document.getElementById('modalRoot').innerHTML=''; }
+
+function toggleJournal(){
+  if(!run||run.done) return;
+  if(journalOpen){ journalOpen=false; closeModal(); return; }
+  if(modal||menuOpen||paused) return;
+  journalOpen=true;
+  const entries=Object.keys(KNOW).filter(k=>meta.know[k]);
+  const hab=Object.entries(HABITS).map(([k,v])=>`<li><b>${v.name}</b> ${hasHabit(k)?'<span class="pill got">unlocked</span>':`<span class="pill">${Math.min(meta.habits[k],v.need)}/${v.need}</span>`}<br><span style="color:var(--muted);font-size:.9rem">${v.desc}</span></li>`).join('');
+  showModal(`<h2>📓 Journal</h2><p style="color:var(--muted);font-size:.9rem">The day resets. This doesn't. (Game is paused.)</p>
+    ${entries.length?`<ul class="journal">${entries.map(k=>`<li><span class="t">${KNOW[k].t}</span><br>${esc(KNOW[k].txt(S))}</li>`).join('')}</ul>`:'<p><i>Nothing yet. Live the day and pay attention.</i></p>'}
+    <div class="section-title">Habits (built by repetition)</div><ul class="journal">${hab}</ul>
+    <button class="btn primary" data-i="x">Close</button>`,'memo',()=>{ journalOpen=false; closeModal(); });
+}
+function togglePause(){
+  if(!run||run.done||modal||menuOpen||journalOpen) return;
+  paused=true;
+  showModal(`<h2>Paused</h2><p>${fmt(run.t)} · ${esc(regionName(player))}</p>
+    <p style="color:var(--muted);font-size:.9rem">Tip: the yellow cone is what ${S.bossShort} can see. Walls block it. Cubicle partitions don't. You're safe inside your own cubicle.</p>
+    <button class="btn primary" data-i="r">Resume</button>
+    <button class="btn" data-i="t" style="text-align:center">Quit to title (this loop is lost)</button>`,'memo',i=>{
+      closeModal(); paused=false; if(i==='t'){ run=null; titleScreen(); } });
+}
+
+let wipeArmed=false;
 function titleScreen(){
-  run=null; modal=null;
+  run=null; modal=null; show('screen');
   const got=Object.keys(meta.endings).length;
-  h(`
+  document.getElementById('screen').innerHTML=`
     <h1>Office Disgrace</h1>
     <p class="tag">A roguelite work simulator. It's Monday. Again.</p>
     <div class="card">
       <p>You wake up at 6:47 AM. You go to work. Your performance review is at 5:00.</p>
       <p>Then you wake up at 6:47 AM. And it's the same Monday.</p>
-      <p style="color:var(--muted);font-size:.9rem">Every loop resets your day, but not what you <i>know</i>. Learn when things happen, use it next time, and find a way to reach Tuesday.</p>
+      <p style="color:var(--muted);font-size:.9rem">Every loop resets your day, but not what you <i>know</i>. Learn when things happen, stay out of your boss's line of sight, and find a way to reach Tuesday.</p>
     </div>
     <div class="section-title">Choose your career</div>
     <div class="sector">
-      <button class="btn" onclick="pick('public')"><b>🏛️ Public Sector</b><small>${SECTORS.public.blurb}</small></button>
-      <button class="btn" onclick="pick('private')"><b>🏢 Private Sector</b><small>${SECTORS.private.blurb}</small></button>
+      <button class="btn" data-s="public"><b>🏛️ Public Sector</b><small>${SECTORS.public.blurb}</small></button>
+      <button class="btn" data-s="private"><b>🏢 Private Sector</b><small>${SECTORS.private.blurb}</small></button>
     </div>
     ${meta.loops?`<div class="section-title">Progress</div>
     <div class="card">
-      <div>Loops lived: <b>${meta.loops}</b> &nbsp;·&nbsp; Journal entries: <b>${Object.keys(meta.know).length}/${Object.keys(KNOW).length}</b></div>
+      <div>Loops lived: <b>${meta.loops}</b> · Journal: <b>${Object.keys(meta.know).length}/${Object.keys(KNOW).length}</b></div>
       <div style="margin-top:8px">Ways out (${got}/4):<br>${Object.entries(ENDINGS).map(([k,e])=>`<span class="pill ${meta.endings[k]?'got':''}">${meta.endings[k]?e.name:'??? · '+e.hint}</span>`).join('')}</div>
-      <button class="btn danger" style="margin-top:12px;text-align:center" onclick="wipe(this)">Erase all progress</button>
+      <button class="btn danger" id="wipe" style="margin-top:12px;text-align:center">Erase all progress</button>
     </div>`:''}
-    <div class="foot">v0.1 playable mockup · progress saves in this browser</div>`);
-}
-function pick(s){ meta.sector=s; save(); newRun(); }
-function wipe(b){ if(!wipeArmed){ wipeArmed=true; b.textContent='Tap again to confirm'; return; } meta=freshMeta(); save(); wipeArmed=false; titleScreen(); }
-let wipeArmed=false;
-
-function hud(){
-  const m=(k,v,goal)=>`<div class="meter"><label><span>${k}</span><span>${v}</span></label><div class="bar ${v<25?'low':''}"><i style="width:${v}%"></i></div></div>`;
-  return `<div class="hud">
-    <div class="row"><div class="clock">${fmt(Math.min(run.t,END))}</div><div class="loopno">LOOP #${meta.loops}<br>${S.org}</div></div>
-    <div class="meters">${m('Output',run.out)}${m('Standing',run.std)}${m('Sanity',run.san)}</div>
-    <div class="goal">Review at 5:00 PM · needs Output 100 &amp; Standing 40</div>
-  </div>`;
-}
-
-function render(){
-  if(!run) return titleScreen();
-  if(run.done) return doneScreen();
-  const A=actions();
-  const recent=run.log.slice(-6);
-  h(`${hud()}
-    <div class="card log">${recent.map((l,i)=>`<p class="${l.cls} ${i===recent.length-1?'new':''}">${esc(l.txt)}</p>`).join('')}</div>
-    <div class="section-title">What do you do?</div>
-    ${A.map((a,i)=>`<button class="btn ${a.special?'special':''} ${a.danger?'danger':''}" onclick="act(${i})">${esc(a.label)}<small>${a.mins?a.mins+' min':'—'}${a.special?' · ★ you know something':''}</small></button>`).join('')}
-    <div class="section-title">Notes</div>
-    <button class="btn" onclick="showJournal()">📓 Open your journal <small>${Object.keys(meta.know).length} entries · what you've learned across loops</small></button>
-    <button class="btn" onclick="titleScreen()" style="text-align:center">Quit to title <small>this loop's day is lost</small></button>
-    ${modal?modalHtml():''}`);
-  window._A=A;
-}
-function act(i){ doAction(window._A[i]); }
-
-function modalHtml(){
-  window._C=modal.choices;
-  return `<div class="modal"><div class="card"><span class="stamp">${fmt(run.t)}</span><h2>${esc(modal.title)}</h2><p>${esc(modal.text)}</p>
-    ${modal.choices.map((c,i)=>`<button class="btn ${c.special?'special':''}" onclick="pickChoice(${i})">${esc(c.label)}</button>`).join('')}</div></div>`;
-}
-function pickChoice(i){ choose(window._C[i]); }
-
-function showJournal(){
-  const entries=Object.keys(KNOW).filter(k=>meta.know[k]);
-  const hab=Object.entries(HABITS).map(([k,v])=>`<li><b>${v.name}</b> ${hasHabit(k)?'<span class="pill got">unlocked</span>':`<span class="pill">${Math.min(meta.habits[k],v.need)}/${v.need}</span>`}<br><span style="color:var(--muted);font-size:.9rem">${v.desc}</span></li>`).join('');
-  const box=document.createElement('div');
-  box.className='modal';
-  box.innerHTML=`<div class="card memo"><h2>📓 Journal</h2>
-    <p style="color:var(--muted);font-size:.9rem">The day resets. This doesn't.</p>
-    ${entries.length?`<ul class="journal">${entries.map(k=>`<li><span class="t">${KNOW[k].t}</span><br>${esc(KNOW[k].txt(S))}</li>`).join('')}</ul>`:'<p><i>Nothing yet. Live the day and pay attention.</i></p>'}
-    <div class="section-title">Habits (built by repetition)</div><ul class="journal">${hab}</ul>
-    <button class="btn primary" id="closeJ">Close</button></div>`;
-  document.body.appendChild(box);
-  box.querySelector('#closeJ').onclick=()=>box.remove();
+    <div class="foot">v0.2 · top-down mockup · progress saves in this browser</div>`;
+  document.querySelectorAll('[data-s]').forEach(b=>b.onclick=()=>{ meta.sector=b.dataset.s; save(); newRun(); });
+  const w=document.getElementById('wipe');
+  if(w) w.onclick=()=>{ if(!wipeArmed){ wipeArmed=true; w.textContent='Tap again to confirm'; return; } meta=freshMeta(); save(); wipeArmed=false; titleScreen(); };
 }
 
 function doneScreen(){
-  const d=run.done;
+  closeModal(); modal=null; menuOpen=false; show('screen');
+  const d=run.done, el=document.getElementById('screen');
   if(d.type==='ending'){
     const got=Object.keys(meta.endings).length;
-    h(`<h1>Tuesday.</h1>
+    el.innerHTML=`<h1>Tuesday.</h1>
       <div class="card"><span class="stamp">ENDING ${got}/4${d.fresh?' · NEW':''}</span><h2>${ENDINGS[d.k].name}</h2><p>${esc(d.text)}</p>
       <p style="color:var(--muted);font-size:.9rem">You broke the loop on loop #${meta.loops}.</p></div>
-      ${got<4?`<p class="tag">There are other ways out of Monday. Want to find them?</p>`:`<p class="tag">You found every way out. You can finally rest. (Thanks for playtesting!)</p>`}
-      <button class="btn primary" onclick="newRun()">Wake up on Monday again<small>keep everything you know</small></button>
-      <button class="btn" onclick="titleScreen()" style="text-align:center">Back to title (switch sectors)</button>`);
-    return;
+      <p class="tag">${got<4?'There are other ways out of Monday. Want to find them?':'You found every way out. You can finally rest. (Thanks for playtesting!)'}</p>
+      <button class="btn primary" id="again">Wake up on Monday again<small>keep everything you know</small></button>
+      <button class="btn" id="totitle" style="text-align:center">Back to title (switch sectors)</button>`;
+  } else {
+    el.innerHTML=`<h1>${fmt(Math.min(run.t,END))}</h1>
+      <div class="card"><span class="stamp">LOOP #${meta.loops} OVER</span><p>${esc(d.text)}</p><p><b>${esc(d.reason)}</b></p>
+      ${learnedThisLoop.length?`<div class="section-title">Learned this loop</div><ul class="journal">${learnedThisLoop.map(k=>`<li><span class="t">${KNOW[k].t}</span><br>${esc(KNOW[k].txt(S))}</li>`).join('')}</ul>`:`<p style="color:var(--muted)">You didn't learn anything new this time.</p>`}
+      </div>
+      <p class="tag">Final: Output ${run.out} · Standing ${run.std} · Sanity ${run.san}</p>
+      <button class="btn primary" id="again">⏰ Wake up<small>${esc(S.wake)}</small></button>
+      <button class="btn" id="totitle" style="text-align:center">Back to title</button>`;
   }
-  h(`<h1>${fmt(Math.min(run.t,END))}</h1>
-    <div class="card"><span class="stamp">LOOP #${meta.loops} OVER</span><p>${esc(d.text)}</p><p><b>${esc(d.reason)}</b></p>
-    ${learnedThisLoop.length?`<div class="section-title">Learned this loop</div><ul class="journal">${learnedThisLoop.map(k=>`<li><span class="t">${KNOW[k].t}</span><br>${esc(KNOW[k].txt(S))}</li>`).join('')}</ul>`:'<p style="color:var(--muted)">You didn\'t learn anything new this time.</p>'}
-    </div>
-    <p class="tag">Final: Output ${run.out} · Standing ${run.std} · Sanity ${run.san}</p>
-    <button class="btn primary" onclick="newRun()">⏰ Wake up<small>${esc(S.wake)}</small></button>
-    <button class="btn" onclick="showJournal()" style="text-align:center">📓 Journal</button>
-    <button class="btn" onclick="titleScreen()" style="text-align:center">Back to title</button>`);
+  document.getElementById('again').onclick=newRun;
+  document.getElementById('totitle').onclick=titleScreen;
+  window.scrollTo(0,0);
 }
 
+// hooks for automated playtesting
+window.__od={get run(){return run}, player, boss, meta:()=>meta, objects, openMenu, nearest, bossSees, playerExposed};
 titleScreen();
 </script>
 </body>
